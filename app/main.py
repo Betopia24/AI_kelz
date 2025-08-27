@@ -30,6 +30,8 @@ from app.services.deviation.investigation.investigation_router import router as 
 from app.services.deviation.quality_review.quality_review_router import router as quality_review_router
 from app.services.QTA.QTA_revision.QTA_revision_router import router as qta_revision_router
 from app.services.QTA.QTA_review.qta_review_router import router as qta_review_router
+from app.services.deviation.Inverstigation_modify.Inverstigation_modify_route import router as investigation_modify_router
+from app.services.deviation.incident_modify.incident_modify_router import router as incident_modify_router
 
 # Register incident routes
 incident_router.register_incident_routes(router)
@@ -37,6 +39,8 @@ incident_router.register_incident_routes(router)
 # Include file extract router under deviation tag
 router.include_router(attachment_router, prefix="/deviation", tags=["deviation"])
 router.include_router(investigation_router, prefix="/investigation/audio", tags=["deviation"])
+router.include_router(investigation_modify_router, prefix="/deviation", tags=["deviation"])
+router.include_router(incident_modify_router, prefix="/deviation", tags=["deviation"])
 
 # Include quality review router
 router.include_router(quality_review_router, prefix="/deviation/quality-review", tags=["deviation"])
