@@ -1,4 +1,4 @@
-#!C:\Users\Adib\AI_kelz\venv\Scripts\python.exe
+#!C:\Users\konok\Desktop\pc-main\kelz_revision\attachment\attachment_clone\AI_kelz\venv\Scripts\python.exe
 
 ##############################################################################
 #
