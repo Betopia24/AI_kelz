@@ -1,0 +1,60 @@
+# Core FastAPI dependencies
+
+fastapi
+uvicorn[standard]
+gunicorn
+
+# AI and ML
+openai
+pydantic
+
+# Database
+sqlalchemy
+psycopg2-binary
+alembic
+
+# File processing
+python-multipart
+pytesseract
+pillow
+google-cloud-documentai
+google-auth
+
+# Caching and session management
+redis
+python-jose[cryptography]
+
+# HTTP client
+httpx
+requests
+
+# Logging and monitoring
+structlog
+python-json-logger
+
+# Environment and configuration
+python-dotenv
+pydantic-settings
+
+# Testing (for development)
+pytest
+pytest-asyncio
+httpx
+
+# Security
+passlib[bcrypt]
+python-multipart
+
+# Utilities
+python-dateutil
+pytz
+
+# Document and file processing
+python-docx
+PyPDF2
+PyMuPDF
+pandas
+reportlab
+openpyxl
+python-pptx
+
