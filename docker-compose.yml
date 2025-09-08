@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  app:
+    build: .
+    container_name: kelz_incident_app
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./app:/app/app
+      - ./temp:/app/temp
+    environment:
+      PYTHONPATH: /app
+      PYTHONUNBUFFERED: 1
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/qsync-genesys-9281cb30e0a1.json
+      PROJECT_ID: qsync-genesys
+      LOCATION: eu
+      PROCESSOR_ID: 1a3f804e6db79958
+      PROCESSOR_VERSION: rc
+    depends_on:
+      - db
+      - redis
+    networks:
+      - kelz_network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: kelz_db
+    environment:
+      - POSTGRES_DB=kelz_db
+      - POSTGRES_USER=kelz_user
+      - POSTGRES_PASSWORD=kelz_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - kelz_network
+    restart: unless-stopped
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: kelz_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kelz_network
+    restart: unless-stopped
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: kelz_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - kelz_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  kelz_network:
+    driver: bridge
