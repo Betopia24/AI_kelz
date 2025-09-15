@@ -34,7 +34,7 @@ def register_incident_routes(router):
         """
         try:
             valid_audio_extensions = ['.mp3', '.wav', '.m4a', '.flac', '.ogg', '.mp4']
-            valid_doc_extensions = ['.pdf', '.docx', '.txt']
+            valid_doc_extensions = ['.pdf', '.docx', '.txt', '.json']  # Added .json
             valid_extensions = valid_audio_extensions + valid_doc_extensions
 
             audio_text = None
@@ -77,10 +77,22 @@ def register_incident_routes(router):
                         raise HTTPException(status_code=400, detail=f"Unsupported document file format: {file_ext}")
                     if len(file_content) > 25 * 1024 * 1024:
                         raise HTTPException(status_code=400, detail="Document file too large. Maximum size is 25MB.")
-                    result_doc = manager.process_uploaded_document(file_content, file.filename)
-                    if result_doc.success and result_doc.transcription:
-                        file_text = result_doc.transcription
-                    filenames.append(file.filename)
+                    
+                    # Handle JSON file
+                    if file_ext == '.json':
+                        import json
+                        try:
+                            json_data = json.loads(file_content.decode('utf-8'))
+                            # You may want to extract a specific field, e.g. 'text'
+                            file_text = json_data.get('text', str(json_data))
+                        except Exception as e:
+                            raise HTTPException(status_code=400, detail=f"Invalid JSON file: {str(e)}")
+                        filenames.append(file.filename)
+                    else:
+                        result_doc = manager.process_uploaded_document(file_content, file.filename)
+                        if result_doc.success and result_doc.transcription:
+                            file_text = result_doc.transcription
+                        filenames.append(file.filename)
 
             # Build strict text output per prompt, always returning text/plain
             def _format_strict_output(data: dict) -> str:
@@ -132,17 +144,17 @@ def register_incident_routes(router):
                 "filename": ", ".join(filenames) if filenames else "unknown",
                 "incident_description": "",
                 "headline": "",
-                "incident_data": {
-                    "title": "",
-                    "who": "",
-                    "what": "",
-                    "where": "",
-                    "immediate_action": "",
-                    "quality_concerns": "",
-                    "quality_controls": "",
-                    "rca_tool": "",
-                    "expected_interim_action": "",
-                    "capa": ""
-                },
+            "incident_data": {
+                "title": "",
+                "who": "",
+                "what": "",
+                "where": "",
+                "immediate_action": "",
+                "quality_concerns": "",
+                "quality_controls": "",
+                "rca_tool": "",
+                "expected_interim_action": "",
+                "capa": ""
+            },
                 "message": f"Error processing file(s): {str(e)}"
             }
