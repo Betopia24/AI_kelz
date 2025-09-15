@@ -20,28 +20,11 @@ services:
       PROCESSOR_ID: 1a3f804e6db79958
       PROCESSOR_VERSION: rc
     depends_on:
-      - db
       - redis
     networks:
       - kelz_network
     restart: unless-stopped
 
-  # PostgreSQL Database
-  db:
-    image: postgres:15-alpine
-    container_name: kelz_complete_db
-    environment:
-      - POSTGRES_DB=kelz_complete_db
-      - POSTGRES_USER=kelz_user
-      - POSTGRES_PASSWORD=kelz_password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
-    networks:
-      - kelz_network
-    restart: unless-stopped
 
   # Redis for caching and session management
   redis:
