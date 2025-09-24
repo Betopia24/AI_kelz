@@ -37,3 +37,6 @@ class PerMinuteInitiationResponse(BaseModel):
     background_details: BackgroundDetails
     background_attendee: List[str]  
     impact_assessment: ImpactAssessment
+
+class FinalCheckRequest(BaseModel):
+    existing_background_details: Dict[str, Any]

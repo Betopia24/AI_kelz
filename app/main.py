@@ -43,7 +43,7 @@ register_impact_assessment_routes(router)
 
 # Include file extract router under deviation tag
 router.include_router(attachment_router, prefix="/Attachment", tags=["deviation"])
-router.include_router(initiation_router, prefix="/per_minute_initiation", tags=["deviation"])
+router.include_router(initiation_router, prefix="/initiation", tags=["deviation"])
 router.include_router(investigation_router, prefix="/investigation/audio", tags=["deviation"])
 router.include_router(investigation_modify_router, prefix="/deviation", tags=["deviation"])
 router.include_router(incident_modify_router, prefix="/deviation", tags=["deviation"])

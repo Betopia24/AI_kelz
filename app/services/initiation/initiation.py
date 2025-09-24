@@ -3,7 +3,7 @@ import json
 import openai
 from fastapi import HTTPException
 from dotenv import load_dotenv
-from app.services.initiation.initiation_schema import PerMinuteInitiationRequest, PerMinuteInitiationResponse
+from app.services.initiation.initiation_schema import PerMinuteInitiationRequest, PerMinuteInitiationResponse, FinalCheckRequest
 
 load_dotenv()
 
@@ -152,4 +152,46 @@ class Initiation:
 
 
 
+    def check_initiation_details (self,input:FinalCheckRequest):
+        prompt = f"""
+                You are a helpful assistant for analyzing structured meeting data.
+
+                You will receive a JSON object called `existing_background_details`, which contains background information extracted from a meeting transcription.
+
+                Your task is to check **which fields have not been filled yet** — i.e., which fields have empty string values "".
+
+                ### Instructions:
+                - Return a natural language sentence listing the names of the fields with missing values.
+                - Format your response as **a plain sentence** like:
+                    - "You haven't talked about CAPA."
+                    - "You haven't talked about Quality Controls and CAPA."
+                    - "You haven't talked about Where, Quality Controls, and CAPA."
+                - If all fields are filled, respond exactly with:
+                    - "All background details have been provided."
+                - ❌ Do NOT return explanations, markdown, or code. Only return the final sentence.
+                - ✅ Your response must be a single plain string that can be shown directly to a user.
+
+                ---
+
+                Here is the input:
+
+                existing_background_details = {{
+                    "Who": "Bob and Alice from QA",
+                    "What": "CAPA review for deviation 0059 flagged during last week's internal audit",
+                    "Where": "",
+                    "Immediate_Action": "",
+                    "Quality_Concerns": "",
+                    "Quality_Controls": "",
+                    "RCA_tool": "fishbone diagram",
+                    "Expected_Interim_Action": "",
+                    "CAPA": ""
+                }}
+
+                ### Example output:
+                "You haven't talked about Where, Immediate Action, Expected Interim Action, and CAPA."
+                """
+
+
+        response = self.get_openai_response(prompt).strip()
+        return response
 
