@@ -11,6 +11,7 @@ class ImpactAssessment(BaseModel):
     Product_Quality: ImpactAssessmentItem
     Patient_Safety: ImpactAssessmentItem
     Regulatory_Impact: ImpactAssessmentItem
+    Validation_Impact: ImpactAssessmentItem
 
 
 class BackgroundDetails(BaseModel):
