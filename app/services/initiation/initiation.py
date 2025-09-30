@@ -69,6 +69,7 @@ class Initiation:
                     - "Product Quality"
                     - "Patient Safety"
                     - "Regulatory Impact"
+                    - "Validation Impact"
 
                 Each of these three fields must be an dictionary object with:
                     - `"impact"`: "Yes" or "No"
@@ -132,6 +133,11 @@ class Initiation:
                     "severity": ""
                     }},
                     "Regulatory_Impact": {{
+                    "impact": "Yes",
+                    "severity": "Low"
+                    }},
+                    
+                    "Validation_Impact": {{
                     "impact": "Yes",
                     "severity": "Low"
                     }}
