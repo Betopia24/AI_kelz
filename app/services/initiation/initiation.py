@@ -162,24 +162,25 @@ class Initiation:
         prompt = f"""
                 You are a helpful assistant for analyzing structured meeting data.
 
-                You will receive a JSON object called `existing_background_details`, which contains background information extracted from a meeting transcription.
+                Input data: {input.existing_background_details}
 
-                Your task is to check **which fields have not been filled yet** — i.e., which fields have empty string values "".
+                Your task is to check **which fields have not been filled yet** — i.e., which fields have empty string values ("").
 
                 ### Instructions:
-                - Return a natural language sentence listing the names of the fields with missing values.
-                - Format your response as **a plain sentence** like:
-                    - "You haven't talked about CAPA."
-                    - "You haven't talked about Quality Controls and CAPA."
-                    - "You haven't talked about Where, Quality Controls, and CAPA."
+                - If there are any fields missing, return a sentence listing their names in a natural way.
+                - For one missing field, the sentence should be like: 
+                    - "You haven't mentioned [Field]."
+                - For multiple missing fields, format the sentence like:
+                    - "You haven't talked about [Field 1], [Field 2], and [Field 3]."
+                - For all missing fields, you can say:
+                    - "You haven't talked about [Field 1], [Field 2], [Field 3], [Field 4], and [Field 5]."
                 - If all fields are filled, respond exactly with:
-                    - "All background details have been provided."
-                - ❌ Do NOT return explanations, markdown, or code. Only return the final sentence.
-                - ✅ Your response must be a single plain string that can be shown directly to a user.
+                - "All background details have been provided."
+                - Do not include any explanations, markdown, or code. Only return the final sentence that can be shown directly to a user.
 
                 ---
 
-                Here is the input:
+                Example input:
 
                 existing_background_details = {{
                     "Who": "Bob and Alice from QA",
@@ -193,10 +194,10 @@ class Initiation:
                     "CAPA": ""
                 }}
 
-                ### Example output:
-                "You haven't talked about Where, Immediate Action, Expected Interim Action, and CAPA."
-                """
+                ### Expected output:
+                "You haven't talked about Where, Immediate Action, Quality Concerns, Expected Interim Action, and CAPA."
 
+                                """
 
         response = self.get_openai_response(prompt).strip()
         return response
