@@ -20,27 +20,12 @@ qta_service = QTARevision()
 document_ocr = DocumentOCR()
 
 @router.post("/per-minute-qta-revision", response_model=per_minute_qta_revision_response)
-async def process_per_minute_revision(
-    transcribed_text: str = Form(...),
-    existing_details: str = None
-):
+async def process_per_minute_revision(request: per_minute_qta_revision_request):
     """
     Process per-minute QTA revision with direct text input
     """
     try:
-        if not transcribed_text.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No text provided"
-            )
-        
-        input_data = per_minute_qta_revision_request(
-            transcribed_text=transcribed_text,
-            existing_details=existing_details
-        )
-        
-        result = qta_service.get_per_minute_summary(input_data)
-        
+        result = qta_service.get_per_minute_summary(request)
         return result
     
     except HTTPException:
