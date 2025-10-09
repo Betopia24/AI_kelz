@@ -1,28 +1,25 @@
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
+from typing import Optional,Dict,Any
 
-class VoiceRevisionRequest(BaseModel):
-    """Request model for voice revision processing"""
-    pass  # File will be handled in route as UploadFile
 
-class VoiceRevisionResponse(BaseModel):
-    """Response model for voice revision processing"""
-    status: str
-    message: str
-    transcribed_text_as_bullet_point: List[str]
-    summary: str
-    processed_document_text: Optional[str] = None
+class per_minute_qta_revision_request(BaseModel):
+    transcribed_text:str
+    existing_details:Optional[str]=None
 
-class AIUpdateDocumentRequest(BaseModel):
-    summary: str
-    processed_document_text: str
+class per_minute_qta_revision_response(BaseModel):
+    changed_details:str
+class final_qta_revision_request(BaseModel):
+    transcribed_text:str
+    client_document: str
+    user_document:str
 
-class AIUpdateDocumentResponse(BaseModel):
-    updated_text: str
-
-class ErrorResponse(BaseModel):
-    """Error response model"""
-    status: str
-    message: str
-    error_code: Optional[str] = None
+class final_qta_revision_response(BaseModel):
+    action_summary:str
+    change_details:Dict[str,Any]
+    new_document_text:str
+    
+class repeat_qta_revision_request(BaseModel):
+    existing_document: str
+    existing_action_summary: str
+    existing_change_details: Dict[str, Any]
+    user_changes: str
