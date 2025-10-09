@@ -20,27 +20,12 @@ qta_service = QTAreview()
 document_ocr = DocumentOCR()
 
 @router.post("/per-minute-qta-review", response_model=per_minute_qta_review_response)
-async def process_per_minute_review(
-    transcribed_text: str = Form(...),
-    existing_details: str = None  
-):
+async def process_per_minute_review(request: per_minute_qta_review_request):
     """
     Process per-minute QTA review with direct text input
     """
     try:
-        if not transcribed_text.strip():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No transcribed text provided"
-            )
-        
-        input_data = per_minute_qta_review_request(
-            transcribed_text=transcribed_text,
-            existing_quality_review=existing_details  
-        )
-        
-        result = qta_service.get_per_minute_summary(input_data)
-        
+        result = qta_service.get_per_minute_summary(request)
         return result
     
     except HTTPException:
