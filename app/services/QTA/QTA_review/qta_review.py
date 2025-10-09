@@ -22,7 +22,7 @@ class QTAreview:
         existing_quality_review = json.dumps(input_data.existing_quality_review or "")
 
         prompt = f"""
-                You are a language model that receives audio transcriptions {transcribed_text} related to quality and change processes. Your task is to analyze the transcription and determine whether any of the following quality review aspects are discussed. You should also correct any transcription errors.
+                You are a language model that receives text input {transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following quality review aspects are discussed.
 
                 Quality Review Criteria to Analyze:
 
@@ -32,21 +32,19 @@ class QTAreview:
                 • Is the evidence compliant with data integrity?  
                 • SME Inputs and Concerns
 
-                You may also receive existing details from earlier transcriptions {existing_quality_review}. If an item was already covered previously, you must still include it in your response if it is present in the new transcription.
+                You may also receive existing details from earlier reviews {existing_quality_review}. If an item was already covered previously, you must still include it in your response if it is present in the new text.
 
                 Instructions:
 
-                1. Fix any transcription errors in the input.  
-                2. Return the corrected transcription under `user_msg`.  
-                3. Identify and list all relevant quality review aspects covered in the transcription under `changed_details`, along with 1–2 sentences for each explaining what was said.  
-                4. Include both new and previously covered relevant details, preserving the markdown format.  
-                5. Respond ONLY with valid JSON, no markdown, no explanations.  
-                6. Your output must follow the structure below:
+                1. Identify and list all relevant quality review aspects covered in the text under `changed_details`, along with 1–2 sentences for each explaining what was said.  
+                2. Include both new and previously covered relevant details, preserving the markdown format.  
+                3. Respond ONLY with valid JSON, no markdown, no explanations.  
+                4. Your output must follow the structure below:
 
                 Example Input:
 
                 {{
-                "transcribed_text": "We reviewed the updated templates and the content looked good overall.",
+                "text": "We reviewed the updated templates and the content looked good overall.",
                 "existing_quality_review": "- **SME Inputs and Concerns**: SME raised a concern about the clarity of one section."
                 }}
 
@@ -83,22 +81,22 @@ class QTAreview:
                 You are an AI assistant responsible for updating a client document.
 
                 Your task is to revise the **original_document** using:
-                1. The user's spoken instructions provided in the **transcribed_text**.
+                1. The user's instructions provided in the **transcribed_text**.
                 2. The **reference_document**, which includes content on a similar topic but is a good example of how the document should be.
 
                 ### Instructions:
                 - First, analyze the **transcribed_text** to extract key instructions or intent behind the changes.
                 - Then, compare the **original_document** with the **reference_document** to identify edits such as additions, removals, or rewritten sections.
-                - Use both sources (transcription and reference) to make accurate and complete updates to the **original_document**.
+                - Use both sources (instructions and reference) to make accurate and complete updates to the **original_document**.
 
                 Your response must be a valid JSON object with the following fields:
 
                 - **quality_review**: A review of quality-related aspects (e.g., Are actions completed? Are content and template updates satisfactory? Is evidence compliant with data integrity? Are SME concerns addressed?).
                 - **change_summary**: A categorized summary of changes made (e.g., SME Inputs and Concerns, CAPA, Gap Assessment, etc.).
-                - **review_summary**: A brief evaluation of how well the updates align with the user's spoken instructions and the reference document.
+                - **review_summary**: A brief evaluation of how well the updates align with the user's instructions and the reference document.
                 - **new_document_text**: The full revised version of the original document, reflecting all relevant changes.
 
-                ### Transcribed Text (User Instructions):
+                ### User Instructions:
                 {input_data.transcribed_text}
 
                 ### Reference Document (With Intended Changes):

@@ -10,7 +10,7 @@ class per_minute_qta_review_response(BaseModel):
     quality_review:str
 class final_qta_review_request(BaseModel):
     transcribed_text:str
-    changed_document: str
+    reference_document: str
     original_document:str
 
 class final_qta_review_response(BaseModel):
