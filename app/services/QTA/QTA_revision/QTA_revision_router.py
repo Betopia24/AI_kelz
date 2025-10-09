@@ -1,158 +1,236 @@
-import time
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+import os
+import tempfile
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Form
 from fastapi.responses import JSONResponse
-from app.services.QTA.QTA_revision.QTA_revision_schema import VoiceRevisionResponse, ErrorResponse, AIUpdateDocumentRequest, AIUpdateDocumentResponse
-from app.services.QTA.QTA_revision.QTA_revision import VoiceRevisionService
-from app.services.utils.ai_analysis import AIAnalyzer
+from app.services.QTA.QTA_revision.QTA_revision_schema import (
+    per_minute_qta_revision_request, 
+    per_minute_qta_revision_response, 
+    final_qta_revision_request, 
+    final_qta_revision_response,
+    repeat_qta_revision_request
+)
+from app.services.QTA.QTA_revision.QTA_revision import QTARevision
+from app.services.utils.convert_file import FileConverter
+from app.services.utils.transcription import transcribe_audio
 from app.services.utils.document_ocr import DocumentOCR
+from typing import Dict, Any
 
 router = APIRouter(prefix="/qta-revision", tags=["qta-revision"])
-voice_service = VoiceRevisionService()
-ai_analyzer = AIAnalyzer()
+converter=FileConverter()
+qta_service = QTARevision()
 document_ocr = DocumentOCR()
 
-@router.post("/process-voice", response_model=VoiceRevisionResponse)
-async def process_voice_revision(
-    audio_files: list[UploadFile] = File(None),
-    documents: list[UploadFile] = File(None)
+@router.post("/per-minute-qta-revision", response_model=per_minute_qta_revision_response)
+async def process_per_minute_revision(
+    audio_file: UploadFile = File(...),
+    existing_details: str = None  # <-- Add this line
 ):
     """
-    Process one or more voice audio files and (optionally) one or more document files. Returns transcribed text, bullet points, summary, and processed document text for each.
+    Process per-minute QTA revision with audio transcription
     """
     try:
-        responses = []
-        # Process multiple audio files
-        if audio_files:
-            for audio_file in audio_files:
-                if not audio_file.content_type.startswith('audio/'):
-                    responses.append({
-                        "status": "error",
-                        "filename": audio_file.filename,
-                        "message": "Only audio files are allowed for audio_file parameter"
-                    })
-                    continue
-                result = await voice_service.process_voice_file(audio_file)
-                responses.append({
-                    "status": "success",
-                    "filename": audio_file.filename,
-                    "transcribed_text_as_bullet_point": result["bullet_points"],
-                    "summary": result["summary"],
-                    "processed_document_text": None
-                })
-        # Process multiple document files
-        if documents:
-            for document in documents:
-                import tempfile, os
-                suffix = os.path.splitext(document.filename)[1]
-                with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_doc:
-                    temp_doc_path = temp_doc.name
-                    content = await document.read()
-                    temp_doc.write(content)
+        if not audio_file.filename:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No audio file provided"
+            )
+        
+        temp_audio_path = None
+        try:
+            file_extension = os.path.splitext(audio_file.filename)[1]
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+                temp_audio_path = temp_file.name
+                content = await audio_file.read()
+                temp_file.write(content)
+            
+            transcribed_text = transcribe_audio(temp_audio_path)
+            
+            if not transcribed_text:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to transcribe audio file"
+                )
+            
+            input_data = per_minute_qta_revision_request(
+                transcribed_text=transcribed_text,
+                existing_details=existing_details  # <-- Use the parameter here
+            )
+            
+            result = qta_service.get_per_minute_summary(input_data)
+            
+            return result
+            
+        finally:
+            if temp_audio_path and os.path.exists(temp_audio_path):
                 try:
-                    processed_document_text = document_ocr.process_file(temp_doc_path)
+                    os.remove(temp_audio_path)
                 except Exception as e:
-                    processed_document_text = f"[ERROR] Could not extract text: {e}"
-                finally:
-                    if os.path.exists(temp_doc_path):
-                        os.unlink(temp_doc_path)
-                responses.append({
-                    "status": "success",
-                    "filename": document.filename,
-                    "transcribed_text_as_bullet_point": None,
-                    "summary": None,
-                    "processed_document_text": processed_document_text
-                })
-        if not responses:
-            return {"status": "error", "message": "No input files provided."}
-        return {"results": responses}
+                    print(f"Warning: Could not remove temporary audio file: {e}")
+    
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error processing voice file: {str(e)}"
+            detail=f"Error processing per-minute revision: {str(e)}"
+        )
+
+@router.post("/final-qta-revision", response_model=final_qta_revision_response)
+async def process_final_revision(
+    transcribed_text: str = Form(...),
+    files: list[UploadFile] = File(...)
+):
+    """
+    Process final QTA revision with transcribed text and document processing
+    """
+
+    try:
+        if not transcribed_text or not transcribed_text.strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Transcribed text must be provided"
+            )
+
+        if len(files) != 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Exactly 2 document files must be provided"
+            )
+
+        client_file = None
+        user_file = None
+
+        for file in files:
+            if not file.filename:
+                continue
+            filename_lower = file.filename.lower()
+
+            if 'client' in filename_lower:
+                client_file = file
+            elif 'user' in filename_lower:
+                user_file = file
+
+        if not client_file or not user_file:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Please upload files with proper names. Filenames should contain 'client' and 'user' respectively."
+            )
+
+        temp_doc_paths = []
+
+        try:
+            client_ext = os.path.splitext(client_file.filename)[1].lower()
+            if client_ext not in ['.pdf', '.docx', '.doc']:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported file type for client file: {client_ext}. Please upload a PDF, DOCX, or DOC file."
+                )
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=client_ext) as temp_file:
+                temp_client_input_path = temp_file.name
+                temp_doc_paths.append(temp_client_input_path)
+                content = await client_file.read()
+                temp_file.write(content)
+
+            if client_ext in ['.docx', '.doc']:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as out_file:
+                    temp_client_output_path = out_file.name
+                    temp_doc_paths.append(temp_client_output_path)
+
+                try:
+                    if client_ext == '.docx':
+                        converter.docx_to_pdf(temp_client_input_path, temp_client_output_path)
+                    else:
+                        converter.doc_to_pdf(temp_client_input_path, temp_client_output_path)
+
+                    client_pdf_path = temp_client_output_path
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to convert client document to PDF: {str(e)}"
+                    )
+            else:
+                client_pdf_path = temp_client_input_path
+
+            try:
+                client_document_text = document_ocr.extract_text(client_pdf_path)
+                if not client_document_text:
+                    client_document_text = f"Could not extract text from {client_file.filename}"
+            except Exception as e:
+                client_document_text = f"Error extracting text from {client_file.filename}: {str(e)}"
+
+            user_ext = os.path.splitext(user_file.filename)[1].lower()
+            if user_ext not in ['.pdf', '.docx', '.doc']:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Unsupported file type for user file: {user_ext}. Please upload a PDF, DOCX, or DOC file."
+                )
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=user_ext) as temp_file:
+                temp_user_input_path = temp_file.name
+                temp_doc_paths.append(temp_user_input_path)
+                content = await user_file.read()
+                temp_file.write(content)
+
+            if user_ext in ['.docx', '.doc']:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as out_file:
+                    temp_user_output_path = out_file.name
+                    temp_doc_paths.append(temp_user_output_path)
+
+                try:
+                    if user_ext == '.docx':
+                        converter.docx_to_pdf(temp_user_input_path, temp_user_output_path)
+                    else:
+                        converter.doc_to_pdf(temp_user_input_path, temp_user_output_path)
+
+                    user_pdf_path = temp_user_output_path
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to convert user document to PDF: {str(e)}"
+                    )
+            else:
+                user_pdf_path = temp_user_input_path
+
+            try:
+                user_document_text = document_ocr.extract_text(user_pdf_path)
+                if not user_document_text:
+                    user_document_text = f"Could not extract text from {user_file.filename}"
+            except Exception as e:
+                user_document_text = f"Error extracting text from {user_file.filename}: {str(e)}"
+
+            input_data = final_qta_revision_request(
+                transcribed_text=transcribed_text,
+                client_document=client_document_text,
+                user_document=user_document_text
+            )
+
+            result = qta_service.get_final_summary(input_data)
+            return result
+
+        finally:
+            for temp_path in temp_doc_paths:
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except Exception as e:
+                        print(f"Warning: Could not remove temporary document file: {e}")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing final revision: {str(e)}"
         )
 
 
-@router.post("/ai-update-document", response_model=AIUpdateDocumentResponse)
-async def ai_update_document(request: AIUpdateDocumentRequest):
-    """
-    Update the processed document text using AI based on the summary of required changes.
-    """
-    try:
-        prompt = f"""
-You are an expert in document editing. Here is a summary of required changes:
-SUMMARY:
-{request.summary}
-
-Here is the original document text:
-DOCUMENT:
-{request.processed_document_text}
-
-Please apply the changes described in the summary to the document text. Return only the updated document text.
-"""
-        updated_text = ai_analyzer.analyze_with_prompt(prompt)
-        if not updated_text:
-            raise HTTPException(status_code=500, detail="AI did not return an updated document text.")
-        return AIUpdateDocumentResponse(updated_text=updated_text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI document update failed: {str(e)}")
-
-async def extract_document_text(document: UploadFile) -> str:
-    """Extract text from uploaded document using local extraction methods"""
-    import tempfile
-    import os
-    
-    suffix = os.path.splitext(document.filename)[1]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_doc:
-        temp_doc_path = temp_doc.name
-        content = await document.read()
-        temp_doc.write(content)
-    
-    try:
-        def extract_text_local(file_path):
-            import os
-            ext = os.path.splitext(file_path)[1].lower()
-            try:
-                if ext == ".pdf":
-                    from PyPDF2 import PdfReader
-                    with open(file_path, "rb") as f:
-                        reader = PdfReader(f)
-                        text = "\n".join(page.extract_text() or "" for page in reader.pages)
-                    # If text is empty or whitespace, try OCR
-                    if not text.strip():
-                        try:
-                            import fitz  # PyMuPDF
-                            import pytesseract
-                            from PIL import Image
-                            ocr_text = []
-                            with fitz.open(file_path) as doc:
-                                for page_num in range(doc.page_count):
-                                    page = doc.load_page(page_num)
-                                    pix = page.get_pixmap()
-                                    img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
-                                    text = pytesseract.image_to_string(img)
-                                    if text.strip():
-                                        ocr_text.append(text)
-                            text = "\n".join(ocr_text)
-                        except Exception as ocr_e:
-                            return f"[ERROR] PDF OCR failed: {ocr_e}"
-                    return text
-                elif ext == ".docx":
-                    from docx import Document
-                    doc = Document(file_path)
-                    return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-                elif ext in [".txt", ".csv", ".md", ".log"]:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        return f.read()
-                else:
-                    return "[ERROR] Unsupported file type for local extraction."
-            except Exception as e:
-                return f"[ERROR] Local extraction failed: {e}"
-        
-        processed_document_text = extract_text_local(temp_doc_path)
-        return processed_document_text
-        
-    except Exception as e:
-        return f"[ERROR] Could not extract text: {e}"
-    finally:
-        if os.path.exists(temp_doc_path):
-            os.unlink(temp_doc_path)
+@router.post("/final-qta-revision-repeat", response_model=final_qta_revision_response)
+async def process_final_revision(request:repeat_qta_revision_request):
+    result = qta_service.repeat_final_summary(
+        request.existing_document,
+        request.existing_action_summary,
+        request.existing_change_details,
+        request.user_changes
+    )
+    return result

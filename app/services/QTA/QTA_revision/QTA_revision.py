@@ -1,173 +1,171 @@
-import openai
 import os
-import tempfile
-from typing import Dict, List
-from fastapi import UploadFile
-import logging
+import json
+import openai
+from fastapi import HTTPException
+from dotenv import load_dotenv
+from .QTA_revision_schema import per_minute_qta_revision_request, per_minute_qta_revision_response, final_qta_revision_request, final_qta_revision_response
+from app.services.utils.document_ocr import DocumentOCR
+from pydantic import ValidationError
 
-# Setup logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
-class VoiceRevisionService:
+load_dotenv()
+
+class QTARevision:
     def __init__(self):
-        """Initialize the voice revision service with OpenAI API"""
-        self.client = openai.OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY")
+        self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        self.document_ocr = DocumentOCR()
+    
+
+
+    def get_per_minute_summary(self, input_data:  per_minute_qta_revision_request) -> per_minute_qta_revision_response:
+        prompt = f"""
+            You are a language model that receives audio transcriptions {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the transcription and determine whether any of the following topics are discussed. You should also correct any transcription errors.
+
+            Topics to detect:
+
+            1. Change Details
+            - Upload change requests
+            - Change control processes
+
+            2. CAPA or Corrective and Preventive Actions
+
+            3. SME (Subject Matter Expert) Inputs and Concerns
+
+            4. Gap Assessment
+            - Specifically, whether a gap assessment is required between in-house and external document templates
+
+            You may also receive existing details from earlier transcriptions {input_data.existing_details}. If a topic was already covered previously, you must still include it in your response if it is present in the new transcription.
+
+            Instructions:
+
+            1. Fix any transcription errors in the input.
+            2. Return the corrected transcription under `user_msg`.
+            3. Identify and list all relevant topics covered in the transcription under `changed_details`, along with 1–2 sentences for each explaining what was said.
+            4. Include both new and previously covered relevant details, preserving the markdown format.
+            5. Respond ONLY with valid JSON, no markdown, no explanations.
+            6. Your output must follow the structure below:
+
+            Example Input:
+
+            {{
+            "transcribed_text": "We also discussed whether a gap assessment is needed for external templates.",
+            "existing_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process."
+            }}
+
+            Example Output:
+
+            {{
+            "user_msg": "We also discussed whether a gap assessment is needed for external templates.",
+            "changed_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process.\n- **Gap Assessment**: The team discussed whether a gap assessment is required for external document templates."
+            }}
+
+            Use this logic and structure when handling any transcription and associated data.
+            """
+
+
+
+        
+
+        
+        response = self.get_openai_response(prompt)
+        print(response)
+        try:
+            response_dict = json.loads(response)
+        except json.JSONDecodeError:
+             raise HTTPException(status_code=500, detail="Failed to parse model response as JSON.")
+        
+        return per_minute_qta_revision_response(**response_dict)
+    
+    
+    def get_final_summary(self, input_data:final_qta_revision_request) -> final_qta_revision_response:
+        """Process review request with optional document text"""
+        prompt = self.create_prompt(input_data)
+        
+        
+        response = self.get_openai_response(prompt)
+        print(response)
+        response_dict = json.loads(response)
+        return final_qta_revision_response(**response_dict)
+
+    def create_prompt(self ,input_data: per_minute_qta_revision_request) -> str:
+        return f"""
+                You are an AI assistant responsible for revising a client document based on user-provided instructions and a modified version of the document.
+
+                Your task involves the following steps:
+                1. Analyze the **transcribed_text** to understand what changes the user is requesting.
+                2. Compare the **client_document** with the **user_document** to identify modifications, additions, or deletions.
+                3. Apply the necessary changes to the client_document to create a new version that reflects the user's input.
+
+                After updating the document, return:
+                - **action_summary**: A brief summary of the changes you made.
+                - **change_details**: A categorized breakdown of changes (e.g., CAPA – Corrective and Preventive Actions, SME Inputs and Concerns, Gap Assessment).
+                - **new_document_text**: The final revised version of the client document.
+
+                ### Transcribed Text (User Instructions):
+                {input_data.transcribed_text}
+
+                ### Original Client Document:
+                {input_data.client_document}
+
+                ### Updated User Document (Reference for Changes):
+                {input_data.user_document}
+
+                Now, analyze and revise the client document accordingly. Return only the structured response in JSON format with keys: action_summary, change_details, and new_document_text.
+                """
+                
+    def repeat_final_summary(
+    self,
+    existing_document: str,
+    existing_action_summary: str,
+    existing_change_details: dict,
+    user_changes: str
+) -> final_qta_revision_response:
+        prompt = f"""
+        You are an AI assistant tasked with revising a client document according to user-provided changes and an updated document.
+
+        Instructions:
+        1. Carefully analyze the user changes: {user_changes}
+        2. Apply these changes to the existing document: {existing_document} to produce a revised document.
+        3. Update the existing action summary: {existing_action_summary} and existing change details: {existing_change_details} based on the new revisions.
+
+        Your response must be a single JSON object with the following keys:
+        - "action_summary": A concise summary of all changes made.
+        - "change_details": A detailed and categorized dictionary of changes (e.g., CAPA, SME Inputs and Concerns, Gap Assessment).
+        - "new_document_text": The complete final revised client document text.
+
+        IMPORTANT:
+        - Return **ONLY** the JSON object, no explanations, no additional text.
+        - Ensure the JSON is valid and properly formatted.
+
+        Now, proceed with the analysis and revision, then respond with the JSON output only.
+        """
+
+        try:
+            response_text = self.get_openai_response(prompt)
+
+            parsed = json.loads(response_text)
+
+            return final_qta_revision_response(
+                action_summary=parsed["action_summary"],
+                change_details=parsed["change_details"],
+                new_document_text=parsed["new_document_text"]
+            )
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse LLM response as JSON: {e}\nRaw response:\n{response_text}")
+        except KeyError as e:
+            raise ValueError(f"Missing expected key in LLM response: {e}")
+        except ValidationError as e:
+            raise ValueError(f"Response validation failed: {e}")
+    
+    def get_openai_response (self, prompt:str)->str:
+        completion =self.client.chat.completions.create(
+            model="gpt-4.1",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7            
         )
-        
-        if not os.getenv("OPENAI_API_KEY"):
-            raise ValueError("OPENAI_API_KEY environment variable is required")
-    
-    async def process_voice_file(self, audio_file: UploadFile) -> Dict:
-        """
-        Process uploaded audio file and return transcribed text with summary
-        
-        Args:
-            audio_file: Uploaded audio file
-            
-        Returns:
-            Dict containing transcribed_text, bullet_points, and summary
-        """
-        try:
-            # Step 1: Save uploaded file temporarily
-            with tempfile.NamedTemporaryFile(delete=False, suffix=f".{audio_file.filename.split('.')[-1]}") as tmp_file:
-                content = await audio_file.read()
-                tmp_file.write(content)
-                tmp_file_path = tmp_file.name
-            
-            # Step 2: Transcribe audio using OpenAI Whisper
-            transcribed_text = await self._transcribe_audio(tmp_file_path)
-            
-            # Step 3: Convert to bullet points
-            bullet_points = await self._convert_to_bullet_points(transcribed_text)
-            
-            # Step 4: Generate summary
-            summary = await self._generate_summary(bullet_points)
-            
-            # Clean up temporary file
-            os.unlink(tmp_file_path)
-            
-            return {
-                "transcribed_text": transcribed_text,
-                "bullet_points": bullet_points,
-                "summary": summary
-            }
-            
-        except Exception as e:
-            logger.error(f"Error processing voice file: {str(e)}")
-            # Clean up temp file if exists
-            if 'tmp_file_path' in locals():
-                try:
-                    os.unlink(tmp_file_path)
-                except:
-                    pass
-            raise e
-    
-    async def _transcribe_audio(self, file_path: str) -> str:
-        """
-        Transcribe audio file using OpenAI Whisper API
-        
-        Args:
-            file_path: Path to the audio file
-            
-        Returns:
-            Transcribed text
-        """
-        try:
-            with open(file_path, "rb") as audio_file:
-                transcript = self.client.audio.transcriptions.create(
-                    model="whisper-1",
-                    file=audio_file,
-                    response_format="text"
-                )
-            
-            logger.info("Audio transcription completed successfully")
-            return transcript
-            
-        except Exception as e:
-            logger.error(f"Error transcribing audio: {str(e)}")
-            raise e
-    
-    async def _convert_to_bullet_points(self, text: str) -> List[str]:
-        """
-        Convert transcribed text into structured bullet points
-        
-        Args:
-            text: Raw transcribed text
-            
-        Returns:
-            List of bullet points
-        """
-        try:
-            prompt = f"""
-            Convert the following transcribed text into clear, organized bullet points. 
-            Focus on extracting key information, instructions, or requirements mentioned in the text.
-            Make each bullet point concise and actionable.
-            
-            Text: {text}
-            
-            Return only the bullet points, one per line, starting with "•".
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that organizes text into clear bullet points."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=1000
-            )
-            
-            bullet_text = response.choices[0].message.content.strip()
-            bullet_points = [point.strip() for point in bullet_text.split('\n') if point.strip() and point.strip().startswith('•')]
-            
-            logger.info(f"Generated {len(bullet_points)} bullet points")
-            return bullet_points
-            
-        except Exception as e:
-            logger.error(f"Error converting to bullet points: {str(e)}")
-            raise e
-    
-    async def _generate_summary(self, bullet_points: List[str]) -> str:
-        """
-        Generate a concise summary from bullet points
-        
-        Args:
-            bullet_points: List of bullet points
-            
-        Returns:
-            Summary text
-        """
-        try:
-            bullet_text = '\n'.join(bullet_points)
-            
-            prompt = f"""
-            Based on the following bullet points, create a concise summary that captures the main themes and key requirements.
-            The summary should be 2-3 sentences long and highlight the most important points.
-            
-            Bullet Points:
-            {bullet_text}
-            
-            Provide a clear, actionable summary.
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant that creates concise summaries from bullet points."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.3,
-                max_tokens=300
-            )
-            
-            summary = response.choices[0].message.content.strip()
-            
-            logger.info("Summary generated successfully")
-            return summary
-            
-        except Exception as e:
-            logger.error(f"Error generating summary: {str(e)}")
-            raise e
+        return completion.choices[0].message.content
+
+
+
+
