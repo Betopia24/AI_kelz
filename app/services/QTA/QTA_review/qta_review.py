@@ -22,7 +22,7 @@ class QTAreview:
         existing_quality_review = json.dumps(input_data.existing_quality_review or "")
 
         prompt = f"""
-                You are a language model that receives text input {transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following quality review aspects are discussed.
+                You are a language model that receives audio transcript {transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following quality review aspects are discussed.
 
                 Quality Review Criteria to Analyze:
 

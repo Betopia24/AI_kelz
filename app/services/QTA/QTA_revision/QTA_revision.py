@@ -19,7 +19,7 @@ class QTARevision:
 
     def get_per_minute_summary(self, input_data:  per_minute_qta_revision_request) -> per_minute_qta_revision_response:
         prompt = f"""
-            You are a language model that receives text input {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following topics are discussed.
+            You are a language model that receives audio transcription {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following topics are discussed.
 
             Topics to detect:
 
