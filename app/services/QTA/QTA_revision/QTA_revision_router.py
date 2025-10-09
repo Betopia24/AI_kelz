@@ -11,7 +11,6 @@ from app.services.QTA.QTA_revision.QTA_revision_schema import (
 )
 from app.services.QTA.QTA_revision.QTA_revision import QTARevision
 from app.services.utils.convert_file import FileConverter
-from app.services.utils.transcription import transcribe_audio
 from app.services.utils.document_ocr import DocumentOCR
 from typing import Dict, Any
 
@@ -22,50 +21,27 @@ document_ocr = DocumentOCR()
 
 @router.post("/per-minute-qta-revision", response_model=per_minute_qta_revision_response)
 async def process_per_minute_revision(
-    audio_file: UploadFile = File(...),
-    existing_details: str = None  # <-- Add this line
+    transcribed_text: str = Form(...),
+    existing_details: str = None
 ):
     """
-    Process per-minute QTA revision with audio transcription
+    Process per-minute QTA revision with direct text input
     """
     try:
-        if not audio_file.filename:
+        if not transcribed_text.strip():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No audio file provided"
+                detail="No text provided"
             )
         
-        temp_audio_path = None
-        try:
-            file_extension = os.path.splitext(audio_file.filename)[1]
-            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
-                temp_audio_path = temp_file.name
-                content = await audio_file.read()
-                temp_file.write(content)
-            
-            transcribed_text = transcribe_audio(temp_audio_path)
-            
-            if not transcribed_text:
-                raise HTTPException(
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="Failed to transcribe audio file"
-                )
-            
-            input_data = per_minute_qta_revision_request(
-                transcribed_text=transcribed_text,
-                existing_details=existing_details  # <-- Use the parameter here
-            )
-            
-            result = qta_service.get_per_minute_summary(input_data)
-            
-            return result
-            
-        finally:
-            if temp_audio_path and os.path.exists(temp_audio_path):
-                try:
-                    os.remove(temp_audio_path)
-                except Exception as e:
-                    print(f"Warning: Could not remove temporary audio file: {e}")
+        input_data = per_minute_qta_revision_request(
+            transcribed_text=transcribed_text,
+            existing_details=existing_details
+        )
+        
+        result = qta_service.get_per_minute_summary(input_data)
+        
+        return result
     
     except HTTPException:
         raise

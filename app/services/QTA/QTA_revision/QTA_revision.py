@@ -19,7 +19,7 @@ class QTARevision:
 
     def get_per_minute_summary(self, input_data:  per_minute_qta_revision_request) -> per_minute_qta_revision_response:
         prompt = f"""
-            You are a language model that receives audio transcriptions {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the transcription and determine whether any of the following topics are discussed. You should also correct any transcription errors.
+            You are a language model that receives text input {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following topics are discussed.
 
             Topics to detect:
 
@@ -34,32 +34,29 @@ class QTARevision:
             4. Gap Assessment
             - Specifically, whether a gap assessment is required between in-house and external document templates
 
-            You may also receive existing details from earlier transcriptions {input_data.existing_details}. If a topic was already covered previously, you must still include it in your response if it is present in the new transcription.
+            You may also receive existing details from earlier reviews {input_data.existing_details}. If a topic was already covered previously, you must still include it in your response if it is present in the new text.
 
             Instructions:
 
-            1. Fix any transcription errors in the input.
-            2. Return the corrected transcription under `user_msg`.
-            3. Identify and list all relevant topics covered in the transcription under `changed_details`, along with 1–2 sentences for each explaining what was said.
-            4. Include both new and previously covered relevant details, preserving the markdown format.
-            5. Respond ONLY with valid JSON, no markdown, no explanations.
-            6. Your output must follow the structure below:
+            1. Identify and list all relevant topics covered in the text under `changed_details`, along with 1–2 sentences for each explaining what was discussed.
+            2. Include both new and previously covered relevant details, preserving the markdown format.
+            3. Respond ONLY with valid JSON, no markdown, no explanations.
+            4. Your output must follow the structure below:
 
             Example Input:
 
             {{
-            "transcribed_text": "We also discussed whether a gap assessment is needed for external templates.",
+            "text": "We also discussed whether a gap assessment is needed for external templates.",
             "existing_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process."
             }}
 
             Example Output:
 
             {{
-            "user_msg": "We also discussed whether a gap assessment is needed for external templates.",
             "changed_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process.\n- **Gap Assessment**: The team discussed whether a gap assessment is required for external document templates."
             }}
 
-            Use this logic and structure when handling any transcription and associated data.
+            Use this logic and structure when handling the text input and associated data.
             """
 
 
@@ -101,7 +98,7 @@ class QTARevision:
                 - **change_details**: A categorized breakdown of changes (e.g., CAPA – Corrective and Preventive Actions, SME Inputs and Concerns, Gap Assessment).
                 - **new_document_text**: The final revised version of the client document.
 
-                ### Transcribed Text (User Instructions):
+                ### User Instructions:
                 {input_data.transcribed_text}
 
                 ### Original Client Document:
