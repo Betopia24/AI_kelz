@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, Body
-from app.services.initiation.initiation_schema import (
+from app.services.deviation.initiation.initiation_schema import (
     PerMinuteInitiationRequest, 
     PerMinuteInitiationResponse,
     FinalCheckRequest,
     FinalRequest,
     FormalIncidentReport
 )
-from app.services.initiation.initiation import Initiation
+from app.services.deviation.initiation.initiation import Initiation
 
 router= APIRouter()
 summary= Initiation()

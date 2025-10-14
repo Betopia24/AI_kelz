@@ -72,7 +72,7 @@ class Initiation:
                     - "Validation Impact"
 
                 Each of these three fields must be an dictionary object with:
-                    - `"impact"`: "Yes" or "No"
+                    - `"impact"`: "Yes" or "No".
                     - `"severity"`: One of "Low", "Medium", "High" if impact is "Yes", or "" if impact is "No".
 
                 ✅ Examples:
