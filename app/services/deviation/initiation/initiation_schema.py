@@ -58,3 +58,7 @@ class FormalIncidentReport(BaseModel):
     meeting_attendees: IncidentReportSection
     impact_assessment: IncidentReportSection
     criticality: IncidentReportSection
+
+class ModifyIncidentReportRequest(BaseModel):
+    existing_report: FormalIncidentReport
+    modifications: str

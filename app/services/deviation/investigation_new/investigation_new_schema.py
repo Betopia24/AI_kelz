@@ -1,9 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Literal
-from datetime import datetime
-from enum import Enum
-
-
 class Discussion(BaseModel):
     discuss_process:str
     equipment:str
@@ -14,8 +10,8 @@ class Discussion(BaseModel):
     equipment_qualification:str
 
 class RootCauseAnalysis(BaseModel):
-    brainstorming:str
-    five_why:str
+    Machine:str
+    Material:str
     fishbone:str
     five_m:str
     fmea:str
@@ -33,15 +29,24 @@ class CAPA(BaseModel):
     corrective_action:str
     preventive_action:str
 
-class FirstTimeInvestigation(str, Enum):
+class FirstTimeInvestigationRequest(BaseModel):
     existing_background_details:Dict[str, Any]
     existing_impact_assessment: Dict[str, Dict[str, Any]]
     document_information: List[Dict[str, Any]]
 
-class FirstTimeInvestigationResponse(BaseModel):
+class InvestigationResponse(BaseModel):
     background:str
     discussion: Discussion
     root_cause_analysis:RootCauseAnalysis
     final_assessment:FinalAssessment
     historic_review:str
     capa:CAPA
+
+class InvestigationRequest(BaseModel):
+    transcript: str
+    existing_background:Optional[str]=None
+    existing_discussion: Optional[Discussion]=None
+    existing_root_cause_analysis:Optional[RootCauseAnalysis]=None
+    existing_final_assessment:Optional[FinalAssessment]=None
+    existing_historic_review:Optional[str]=None
+    existing_capa:Optional[CAPA]=None
