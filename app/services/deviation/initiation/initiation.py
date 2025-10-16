@@ -3,7 +3,7 @@ import json
 import openai
 from fastapi import HTTPException
 from dotenv import load_dotenv
-from app.services.initiation.initiation_schema import PerMinuteInitiationRequest, PerMinuteInitiationResponse, FinalCheckRequest, FinalRequest, FormalIncidentReport, IncidentReportSection
+from app.services.deviation.initiation.initiation_schema import PerMinuteInitiationRequest, PerMinuteInitiationResponse, FinalCheckRequest, FinalRequest, FormalIncidentReport, IncidentReportSection, ModifyIncidentReportRequest
 
 load_dotenv()
 
@@ -321,4 +321,101 @@ class Initiation:
            
         IMPORTANT: Return ONLY valid JSON with the five requested sections. No explanations, no markdown code blocks, just the JSON object.
         """
+    
+    def modify_incident_report(self, input_data: ModifyIncidentReportRequest) -> str:
+        prompt= f"""
+        You are an expert AI assistant for pharmaceutical quality management and deviation reporting.
+        Your task is to generate a formal incident report based on the transcription and any existing details provided.
+        
+        ## INPUT DATA:
+        - Existing incident report: {input_data.existing_report.json()}
+        - Modifications needed: {input_data.modifications}
+        
+        
+        ## OUTPUT FORMAT:
+        Generate a structured incident report with the following 5 main sections. Your response must be a JSON object with these exact sections:
+        
+        {{
+            "incident_title": "1. Incident Title [Title] \\nDeviation ID: [To be assigned] \\nDate/Time of Occurrence: [Date], [Time] hrs \\nLocation: [Location] \\nProduct: [Product Name] \\nDosage Form: [Form]",
+            
+            "background": "2. Background \\n[Detailed description of what happened] \\n\\nPersonnel involved include [list of names] \\n\\nImmediate Action \\n[Actions taken immediately after detection] \\n\\nQuality Concerns/Controls \\n[Quality concerns and controls] \\n\\nRCA Tools \\n[Root cause analysis tools selected and rationale] \\n\\nExpected Interim action \\n[Expected interim steps] \\n\\nCAPA \\n[Corrective and preventive actions]",
+            
+            "meeting_attendees": "3. Meeting Attendees \\n[List of all attendee names]",
+            
+            "impact_assessment": "4. Impact Assessment \\n[Detailed assessment of impact on product quality, patient safety, validation, regulatory compliance]",
+            
+            "criticality": "5. Criticality \\nCriticality: [Minor/Major/Critical] \\n[Rationale for criticality determination]"
+        }}
+        
+        ## INSTRUCTIONS:
+        1. Format each section exactly as shown in the template above
+        2. Include all available information from the input data
+        3. For any missing information, make reasonable assumptions based on pharmaceutical industry standards
+        4. Ensure the report is comprehensive, professional, and follows regulatory expectations
+        5. Include all five numbered sections with proper formatting
+        6. Use the exact reference format shown in the example below
+        
+        ## EXAMPLE FORMAT REFERENCE:
+        Follow this exact format for the report:
+
+        1. Incident Title: Low Tablet Weights Identified During In-Process Checks on Tableting Line 5
+           Deviation ID: [To be assigned]
+           Date/Time of Occurrence: 19-Sep-2025, 15:00 hrs
+           Location: Tableting Line 5
+           Product: Analgesic (Over-the-Counter)
+           Dosage Form: Tablets
+
+        2. Background
+           On 19-Sep-2025, 15:00 hrs during routine in-process checks on Tableting Line 5, low tablet weights were detected. The weights were below the specified limits. This deviation was identified by production operators during scheduled sampling.
+           
+           Personnel involved include Michael E. Saidi M. Rana S.
+           
+           Immediate Action
+           Quarantined all tablets manufactured since the last acceptable in-process weight check. Halted further compression activity until investigation initiated. Secured equipment to prevent unintended use. Notified QA and initiated deviation record. Batch records and machine settings reviewed at line.
+           
+           Quality Concerns/Controls
+           Product Quality Impact: Potential for sub-potent (ineffective) product reaching patients if not detected. Validation Impact: Question raised on validated status of equipment and process stability; possibility of drift in machine settings or inadequate process controls. Compliance Gaps: Need to verify adequacy of in-process check frequency, operator training, and equipment calibration/qualification status.
+           
+           RCA Tools
+           Root Cause Analysis Due to potential major criticality the root cause tool selected is fishbone analysis.
+           
+           Expected Interim action
+           Not discussed
+           
+           CAPA
+           Not discussed.
+
+        3. Meeting Attendees
+           Michael E. Saidi M. Rana S.
+
+        4. Impact Assessment
+           Rationale: Deviation may impact product quality (low tablet weights → sub-potent dose) but no immediate patient safety risk as deviation was detected during in-process checks and impacted batch portion quarantined. Validation impact identified resulting in major criticality. Customer notification to be identified via QTA review.
+
+        5. Criticality
+           Criticality: Major
+           
+        IMPORTANT: Return ONLY valid JSON with the five requested sections. No explanations, no markdown code blocks, just the JSON object.
+        """
+        response = self.get_openai_response(prompt)
+        
+        try:
+            report_sections = json.loads(response)
+            
+            formal_report = FormalIncidentReport(
+                incident_title=IncidentReportSection(content=report_sections["incident_title"]),
+                background=IncidentReportSection(content=report_sections["background"]),
+                meeting_attendees=IncidentReportSection(content=report_sections["meeting_attendees"]),
+                impact_assessment=IncidentReportSection(content=report_sections["impact_assessment"]),
+                criticality=IncidentReportSection(content=report_sections["criticality"])
+            )
+            return formal_report
+            
+        except json.JSONDecodeError as e:
+            print("Raw response:", response)
+            raise HTTPException(status_code=500, detail="Failed to parse AI response as JSON")
+        except KeyError as e:
+            print("Raw response:", response)
+            raise HTTPException(status_code=500, detail=f"Missing required section in response: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error generating incident report: {str(e)}")
 
