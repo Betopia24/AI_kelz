@@ -4,7 +4,8 @@ from app.services.deviation.initiation.initiation_schema import (
     PerMinuteInitiationResponse,
     FinalCheckRequest,
     FinalRequest,
-    FormalIncidentReport
+    FormalIncidentReport,
+    ModifyIncidentReportRequest
 )
 from app.services.deviation.initiation.initiation import Initiation
 
@@ -44,6 +45,16 @@ async def generate_incident_report(request_data: FinalRequest):
     """
     try:
         response = summary.generate_formal_incident_report(request_data)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+
+@router.post("/modify_incident_report", response_model=FormalIncidentReport)
+async def modify_incident_report(request_data: ModifyIncidentReportRequest):
+    try:
+        response = summary.modify_incident_report(request_data)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
