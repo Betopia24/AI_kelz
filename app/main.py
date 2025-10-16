@@ -27,7 +27,8 @@ document_ocr = DocumentOCR()
 from app.services.deviation.incident import incident_router
 from app.services.deviation.attchement.attachment_router import router as attachment_router
 from app.services.deviation.initiation.initiation_route import router as initiation_router
-from app.services.deviation.investigation.investigation_router import router as investigation_router
+# from app.services.deviation.investigation.investigation_router import router as investigation_router
+from app.services.deviation.investigation_new.investigation_new_router import router as investigation_router
 from app.services.deviation.quality_review.quality_review_router import router as quality_review_router
 from app.services.QTA.QTA_revision.QTA_revision_router import router as qta_revision_router
 from app.services.QTA.QTA_review.qta_review_router import router as qta_review_router
@@ -44,7 +45,7 @@ register_impact_assessment_routes(router)
 # Include file extract router under deviation tag
 router.include_router(attachment_router, prefix="/Attachment", tags=["deviation"])
 router.include_router(initiation_router, prefix="/initiation", tags=["initiation"])
-router.include_router(investigation_router, prefix="/investigation/audio", tags=["deviation"])
+router.include_router(investigation_router, prefix="/investigation", tags=["investigation"])
 router.include_router(investigation_modify_router, prefix="/deviation", tags=["deviation"])
 router.include_router(incident_modify_router, prefix="/deviation", tags=["deviation"])
 
