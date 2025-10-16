@@ -34,14 +34,6 @@ class FirstTimeInvestigationRequest(BaseModel):
     existing_impact_assessment: Dict[str, Dict[str, Any]]
     document_information: List[Dict[str, Any]]
 
-class InvestigationResponse(BaseModel):
-    background:str
-    discussion: Discussion
-    root_cause_analysis:RootCauseAnalysis
-    final_assessment:FinalAssessment
-    historic_review:str
-    capa:CAPA
-
 class InvestigationRequest(BaseModel):
     transcript: str
     existing_background:Optional[str]=None
@@ -50,3 +42,22 @@ class InvestigationRequest(BaseModel):
     existing_final_assessment:Optional[FinalAssessment]=None
     existing_historic_review:Optional[str]=None
     existing_capa:Optional[CAPA]=None
+    exisiting_attendees:Optional[List[str]]=None
+
+class InvestigationResponse(BaseModel):
+    background:str
+    discussion: Discussion
+    root_cause_analysis:RootCauseAnalysis
+    final_assessment:FinalAssessment
+    historic_review:str
+    capa:CAPA
+
+class FinalInvestigationReportResponse(BaseModel):
+    background: str
+    immediate_actions: str
+    discussion: str
+    fishbone_diagram: List[str]  # Each line of the diagram as separate string
+    historical_review: str
+    capa: str
+    impact_assessment: str
+    conclusion: str

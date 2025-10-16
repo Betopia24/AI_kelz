@@ -1,7 +1,7 @@
 import re
 import json
 from app.services.utils.transcription import VoiceTranscriber
-from app.services.deviation.investigation_new.investigation_new_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest
+from app.services.deviation.investigation_new.investigation_new_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest, FinalInvestigationReportResponse
 import openai
 import os
 class InvestigationService:
@@ -96,9 +96,10 @@ class InvestigationService:
               }}
               '''
       response = self.get_openai_response(prompt)
-      return InvestigationResponse(**json.loads(response))
+      parsed_response = self.clean_and_parse_json(response)
+      return InvestigationResponse(**parsed_response)
 
-def per_minute_investigation(self, input: InvestigationRequest) -> InvestigationResponse:
+    def per_minute_investigation(self, input: InvestigationRequest) -> InvestigationResponse:
       prompt = f'''
               You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. Analyze the following transcript and provide a comprehensive investigation analysis.
               
@@ -110,28 +111,109 @@ def per_minute_investigation(self, input: InvestigationRequest) -> Investigation
               Existing CAPA :{input.existing_capa}
               '''
       response = self.get_openai_response(prompt)
-      return InvestigationResponse(**json.loads(response))
+      parsed_response = self.clean_and_parse_json(response)
+      return InvestigationResponse(**parsed_response)
 
 
-def final_investigation(self, input: InvestigationRequest) -> InvestigationResponse:
+    def final_investigation_report(self, input: InvestigationRequest) -> FinalInvestigationReportResponse:
       prompt = f'''
-              You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. Analyze the following transcript and provide a comprehensive investigation analysis.
-              
-              Existing Background :{input.existing_background}
-              Existing Discussion :{input.existing_discussion}
-              Existing Root Cause Analysis :{input.existing_root_cause_analysis}
-              Existing Final Assessment :{input.existing_final_assessment}
-              Existing Historic Review :{input.existing_historic_review}
-              Existing CAPA :{input.existing_capa}
-              '''
+You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance.
+
+Using the provided existing investigation fragments, produce a structured Final Investigation Report in JSON format.
+
+CRITICAL: YOU MUST GENERATE A COMPLETE FISHBONE DIAGRAM. Do NOT use placeholder text like "Factor 1", "Factor 2". Use REAL, SPECIFIC factors based on the investigation data provided.
+
+JSON Structure Required:
+
+{{
+  "background": "2-3 sentences describing what happened, when, where, who was involved, and immediate circumstances",
+  "immediate_actions": "List the immediate steps taken when the deviation was discovered - quarantine, stopping processes, notifications, etc.",
+  "discussion": "Cover Product Quality impact, Validation Impact, Compliance implications, Process controls, Equipment factors, Personnel factors, Documentation adequacy, and Most probable root cause statement",
+  "fishbone_diagram": [
+    "                    TABLET WEIGHT DEVIATION",
+    "                           |",
+    "Machine -----> |  <----- Material",
+    "- Press speed  |         - Powder flow",
+    "- Calibration  |         - Blend density", 
+    "- Force setting|         - Granule size",
+    "               |",
+    "Man --------> |  <----- Method",
+    "- Setup error  |         - SOP adherence",
+    "- Training gap |         - Check frequency",
+    "- Procedure    |         - Weight limits",
+    "               |",
+    "Measurement -> |  <----- Environment",
+    "- Scale accuracy        - Humidity",
+    "- Calibration status    - Temperature"
+  ],
+  "historical_review": "Review of previous occurrences, trends, and data analysis",
+  "capa": "Correction: Immediate fixes\\nCorrective Action: Root cause prevention\\nPreventive Action: System-wide improvements",
+  "impact_assessment": "Cover Patient Safety, Product Quality, and Validation impacts",
+  "conclusion": "2-3 sentences summarizing deviation classification, key findings, and meeting attendees"
+}}
+
+FISHBONE DIAGRAM REQUIREMENTS - THIS IS MANDATORY:
+1. Replace "TABLET WEIGHT DEVIATION" with the actual deviation type from the data
+2. Under Machine: List REAL equipment-related factors (calibration, settings, maintenance, etc.)
+3. Under Material: List REAL material factors (powder properties, blend characteristics, etc.)
+4. Under Man: List REAL human factors (training, procedures, setup errors, etc.)
+5. Under Method: List REAL process factors (SOPs, procedures, controls, etc.)
+6. Under Measurement: List REAL measurement factors (calibration, accuracy, etc.)
+7. Under Environment: List REAL environmental factors (temperature, humidity, etc.)
+8. Use 2-3 specific factors per category, not generic placeholders
+9. Make factors directly relevant to pharmaceutical manufacturing
+
+Existing Investigation Data:
+Background: {input.existing_background}
+Discussion: {input.existing_discussion}
+Root Cause Analysis: {input.existing_root_cause_analysis}
+Final Assessment: {input.existing_final_assessment}
+Historic Review: {input.existing_historic_review}
+CAPA: {input.existing_capa}
+Attendees: {input.exisiting_attendees}
+
+GENERATE THE FISHBONE DIAGRAM WITH REAL FACTORS! Return ONLY valid JSON with the structure above.
+'''
       response = self.get_openai_response(prompt)
-      return InvestigationResponse(**json.loads(response))
+      parsed_response = self.clean_and_parse_json(response)
+      
+      return FinalInvestigationReportResponse(
+          background=parsed_response["background"],
+          immediate_actions=parsed_response["immediate_actions"],
+          discussion=parsed_response["discussion"],
+          fishbone_diagram=parsed_response["fishbone_diagram"],
+          historical_review=parsed_response["historical_review"],
+          capa=parsed_response["capa"],
+          impact_assessment=parsed_response["impact_assessment"],
+          conclusion=parsed_response["conclusion"]
+      )
         
-def get_openai_response(self, prompt: str) -> str:
+    def get_openai_response(self, prompt: str) -> str:
         completion = self.client.chat.completions.create(
             model="gpt-4.1",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.7,
-            max_tokens=1000
+            temperature=0.7
         )
         return completion.choices[0].message.content.strip()
+    
+    def clean_and_parse_json(self, response: str) -> dict:
+        """Clean AI response and parse as JSON, handling common formatting issues"""
+        try:
+            # Remove markdown code blocks if present
+            if response.startswith('```json'):
+                response = response.replace('```json', '').replace('```', '').strip()
+            elif response.startswith('```'):
+                response = response.replace('```', '').strip()
+            
+            # Try to parse the JSON
+            return json.loads(response)
+        except json.JSONDecodeError as e:
+            # If JSON parsing fails, try to fix common issues
+            try:
+                # Replace actual newlines with \\n in string values
+                import re
+                # This regex finds content between quotes and replaces actual newlines with \n
+                response = re.sub(r'"([^"]*)"', lambda m: '"' + m.group(1).replace('\n', '\\n').replace('\r', '') + '"', response)
+                return json.loads(response)
+            except Exception:
+                raise ValueError(f"Failed to parse AI response as JSON: {str(e)}")
