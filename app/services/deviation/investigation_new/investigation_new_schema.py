@@ -10,11 +10,12 @@ class Discussion(BaseModel):
     equipment_qualification:str
 
 class FishboneAnalysis(BaseModel):
-    Machine:str
-    Material:str
-    fishbone:str
-    five_m:str
-    fmea:str
+    people:str
+    method:str
+    machine:str
+    material:str
+    environment:str
+    measurement:str
 class RootCauseAnalysis(BaseModel):
     FishboneAnalysis:FishboneAnalysis
     FiveWhy:str

@@ -14,7 +14,7 @@ class InvestigationService:
               You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. Analyze the following transcript and provide a comprehensive investigation analysis.
 
               CRITICAL INSTRUCTIONS:
-              1. Even if specific sections are not explicitly mentioned, use your pharmaceutical expertise to provide reasonable analysis based on context clues, industry standards, and best practices
+              1. Even if specific sections
               2. Generate meaningful insights and recommendations based on the incident described
               3. Use pharmaceutical industry knowledge to fill gaps where transcript is unclear
               4. Provide actionable insights even from limited information
@@ -131,22 +131,23 @@ JSON Structure Required:
   "discussion": "Cover Product Quality impact, Validation Impact, Compliance implications, Process controls, Equipment factors, Personnel factors, Documentation adequacy, and Most probable root cause statement. Include detailed analysis of the overall process, variables, environmental factors, equipment settings, validated parameters, documentation controls, SOPs, personnel training, equipment qualification, and maintenance. End with the most probable root cause statement.",
   "root_cause_analysis": {{
     "FishboneAnalysis": {{
-      "Machine": "Specific machine-related factors like feeder malfunction, compression force variation, tooling wear, speed and low fill",
-      "Material": "Material-related factors like blend flow issues, granule size variability, bulk density",
-      "fishbone": "Complete fishbone analysis summary covering all 6 categories",
-      "five_m": "Analysis of Man, Machine, Method, Material, Measurement factors",
-      "fmea": "FMEA analysis and recommendations if applicable"
+      "machine": "Specific machine-related factors like feeder malfunction, compression force variation, tooling wear, speed and low fill",
+      "material": "Material-related factors like blend flow issues, granule size variability, bulk density",
+      "people": "Human factors like operator errors, training deficiencies, procedural non-compliance",
+      "method": "Process-related factors like in-process check frequency, SOP adherence",
+      "measurement": "Measurement system issues like equipment calibration, weight check accuracy",
+      "environment": "Environmental factors like humidity/temperature affecting blend flow",
     }},
     "FiveWhy": "Complete 5 Why analysis for the root cause identification"
   }},
-  "fishbone_diagram": [
-    {{"category": "Machine", "factors": "feeder malfunction, compression force variation, tooling wear, speed and low fill"}},
-    {{"category": "Material", "factors": "blend flow issues, granule size variability, bulk density"}},
-    {{"category": "Man (Operator)", "factors": "setup error, adjustment deviation, training gaps"}},
-    {{"category": "Method", "factors": "in-process check frequency, SOP adherence"}},
-    {{"category": "Measurement", "factors": "equipment calibration, weight check accuracy"}},
-    {{"category": "Environment", "factors": "humidity/temperature affecting blend flow"}}
-  ],
+    "fishbone_diagram": [
+      {{"machine": ["feeder malfunction", "compression force variation", "tooling wear", "speed and low fill"]}},
+      {{"material": ["blend flow issues", "granule size variability", "bulk density"]}},
+      {{"people": ["setup error", "adjustment deviation", "training gaps"]}},
+      {{"method": ["in-process check frequency", "SOP adherence"]}},
+      {{"measurement": ["equipment calibration", "weight check accuracy"]}},
+      {{"environment": ["humidity/temperature affecting blend flow"]}}
+    ],
   "historical_review": "Review of previous occurrences, trends, data analysis, equipment calibration/qualification records verification. Example: No recent findings; review of last 6 months deviations and PQR data ongoing. Equipment calibration/qualification records to be verified.",
   "capa": "CAPA plan to prevent and early detection of non-conformance. Include Correction (immediate fixes), Corrective Action (root cause prevention), and Preventive Action (system-wide improvements)",
   "impact_assessment": "Cover Patient Safety, Product Quality, and Validation impacts with specific risk levels and implications",
