@@ -9,12 +9,15 @@ class Discussion(BaseModel):
     personnel_training:str
     equipment_qualification:str
 
-class RootCauseAnalysis(BaseModel):
+class FishboneAnalysis(BaseModel):
     Machine:str
     Material:str
     fishbone:str
     five_m:str
     fmea:str
+class RootCauseAnalysis(BaseModel):
+    FishboneAnalysis:FishboneAnalysis
+    FiveWhy:str
 
 class FinalAssessment(BaseModel):
     patient_safety:str
@@ -56,7 +59,8 @@ class FinalInvestigationReportResponse(BaseModel):
     background: str
     immediate_actions: str
     discussion: str
-    fishbone_diagram: List[str]  # Each line of the diagram as separate string
+    root_cause_analysis: RootCauseAnalysis
+    fishbone_diagram:List[Dict[str, Any]]
     historical_review: str
     capa: str
     impact_assessment: str
