@@ -105,12 +105,15 @@ class InvestigationService:
       prompt = f'''
               You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. Analyze the following transcript and provide a comprehensive investigation analysis.
               
-              Existing Background :{input.existing_background}
-              Existing Discussion :{input.existing_discussion}
-              Existing Root Cause Analysis :{input.existing_root_cause_analysis}
-              Existing Final Assessment :{input.existing_final_assessment}
-              Existing Historic Review :{input.existing_historic_review}
-              Existing CAPA :{input.existing_capa}
+              Transcript: {input.transcript}
+              
+              Existing Investigation Data:
+              Existing Background: {input.existing_background or "Not provided"}
+              Existing Discussion: {input.existing_discussion or "Not provided"}
+              Existing Root Cause Analysis: {input.existing_root_cause_analysis or "Not provided"}
+              Existing Final Assessment: {input.existing_final_assessment or "Not provided"}
+              Existing Historic Review: {input.existing_historic_review or "Not provided"}
+              Existing CAPA: {input.existing_capa or "Not provided"}
 
               Based on your analysis, provide a comprehensive investigation covering these areas:
 
@@ -194,8 +197,6 @@ class InvestigationService:
 You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. You will be given a audio transcript of the investigation meeting along with existing investigation information.
 
 Using the provided existing investigation fragments, produce a structured Final Investigation Report in JSON format following this exact template format.
-
-CRITICAL: YOU MUST GENERATE A COMPLETE FISHBONE DIAGRAM. Do NOT use placeholder text like "Factor 1", "Factor 2". Use REAL, SPECIFIC factors based on the investigation data provided.
 
 JSON Structure Required:
 
