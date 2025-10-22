@@ -111,6 +111,78 @@ class InvestigationService:
               Existing Final Assessment :{input.existing_final_assessment}
               Existing Historic Review :{input.existing_historic_review}
               Existing CAPA :{input.existing_capa}
+
+              Based on your analysis, provide a comprehensive investigation covering these areas:
+
+              **Background**: Summarize the incident, what happened, when, where, and initial circumstances
+
+              **Discussion**: 
+                - Discuss Process: What process was involved, potential process failures or gaps
+                - Equipment: Equipment involved, potential equipment issues or malfunctions  
+                - Environment: Environmental factors affecting the incident
+                - Documentation Is Adequate: "Yes" or "No" based on documentation review
+                - External Communication: Discuss external communication (emails, forms, batch records etc) to support investigation
+                - Personnel Training: Training adequacy and gaps identified
+                - Equipment Qualification: Equipment qualification status and any issues
+                
+              **Root Cause Analysis**:
+                - Fishbone Analysis: Complete fishbone diagram with all 6 categories (People, Method, Machine, Material, Environment, Measurement)
+                - Five Why: Complete 5 Why analysis to identify root cause
+                
+              **Final Assessment**:
+                - Patient Safety: Potential patient safety impact and risk level
+                - Product Quality: Impact on product quality and specifications
+                - Compliance Impact: GMP, regulatory compliance implications
+                - Validation Impact: Impact on validated systems or processes
+                - Regulatory Impact: Potential regulatory reporting or actions needed
+                
+              **Historic Review**: Previous occurrences, recurrence likelihood, historical context, and required investigation depth and CAPA scope
+              
+              **CAPA**:
+                - Correction: Immediate fixes to address the specific incident
+                - Interim Action: Short-term measures to prevent immediate recurrence
+                - Corrective Action: Address root cause to prevent recurrence
+                - Preventive Action: Broader measures to prevent similar issues
+
+              Return ONLY a valid JSON object with this exact structure (all lowercase keys with underscores):
+
+              {{
+                "background": "Detailed background analysis based on the provided information",
+                "discussion": {{
+                  "discuss_process": "Process analysis and potential gaps",
+                  "equipment": "Equipment factors and considerations",
+                  "environment": "Environmental factors analysis", 
+                  "documentation_is_adequate": "Yes or No - Documentation adequacy assessment",
+                  "external_communication": "Analysis of external communication (emails, forms, batch records etc) to support investigation",
+                  "personnel_training": "Personnel training assessment and gaps",
+                  "equipment_qualification": "Equipment qualification status and issues"
+                }},
+                "root_cause_analysis": {{
+                  "FishboneAnalysis": {{
+                    "people": "Human factors and personnel-related root causes",
+                    "method": "Process and procedure-related root causes",
+                    "machine": "Equipment and machinery-related root causes",
+                    "material": "Raw material and component-related root causes",
+                    "environment": "Environmental factors contributing to root cause",
+                    "measurement": "Measurement and monitoring system factors"
+                  }},
+                  "FiveWhy": "Complete 5 Why analysis - ask why 5 times to identify root cause"
+                }},
+                "final_assessment": {{
+                  "patient_safety": "Patient safety impact assessment and risk level",
+                  "product_quality": "Product quality impact and implications",
+                  "compliance_impact": "Regulatory compliance and GMP implications", 
+                  "validation_impact": "Impact on validated systems and processes",
+                  "regulatory_impact": "Regulatory reporting and authority notification needs"
+                }},
+                "historic_review": "Assessment of previous occurrences, recurrence likelihood, historical context, and required investigation depth and CAPA scope",
+                "capa": {{
+                  "correction": "Immediate corrective measures to address the specific incident",
+                  "interim_action": "Short-term actions to prevent immediate recurrence",
+                  "corrective_action": "Root cause addressing actions to prevent recurrence", 
+                  "preventive_action": "Preventive measures to avoid similar issues system-wide"
+                }}
+              }}
               '''
       response = self.get_openai_response(prompt)
       parsed_response = self.clean_and_parse_json(response)
