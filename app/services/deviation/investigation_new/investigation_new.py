@@ -9,7 +9,7 @@ class InvestigationService:
         self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-    def initial_investigation(self, input: InvestigationRequest) -> InvestigationResponse:
+    def initial_investigation(self, input: FirstTimeInvestigationRequest) -> InvestigationResponse:
       prompt = f'''
               You are an expert pharmaceutical deviation investigator with 20+ years of experience in GMP, quality systems, and regulatory compliance. Analyze the following transcript and provide a comprehensive investigation analysis.
 
@@ -30,69 +30,71 @@ class InvestigationService:
               **Background**: Summarize the incident, what happened, when, where, and initial circumstances
 
               **Discussion**: 
-                - Process: What process was involved, potential process failures or gaps
+                - Discuss Process: What process was involved, potential process failures or gaps
                 - Equipment: Equipment involved, potential equipment issues or malfunctions  
-                - Environment/People: Environmental factors, human factors, training issues
-                - Is Documentation Adequate:"Yes" or "No" or "" if unknown
-                - external_communication: Discuss interview external communication (emails, forms, batch records etc) to support investigation.
-                - personnel_training
-                - equipment_qualification
+                - Environment: Environmental factors affecting the incident
+                - Documentation Is Adequate: "Yes" or "No" based on documentation review
+                - External Communication: Discuss external communication (emails, forms, batch records etc) to support investigation
+                - Personnel Training: Training adequacy and gaps identified
+                - Equipment Qualification: Equipment qualification status and any issues
+                
               **Root Cause Analysis**:
-                - 5 Why: Recommend 5 Why analysis approach for this incident type
-                - Fishbone: Suggest Fishbone categories relevant to this deviation
-                - 5Ms: Analyze Man, Machine, Method, Material, Measurement factors
-                - FMEA: Recommend FMEA approach if applicable
+                - Fishbone Analysis: Complete fishbone diagram with all 6 categories (People, Method, Machine, Material, Environment, Measurement)
+                - Five Why: Complete 5 Why analysis to identify root cause
+                
               **Final Assessment**:
                 - Patient Safety: Potential patient safety impact and risk level
                 - Product Quality: Impact on product quality and specifications
                 - Compliance Impact: GMP, regulatory compliance implications
                 - Validation Impact: Impact on validated systems or processes
                 - Regulatory Impact: Potential regulatory reporting or actions needed
-              **Historic Review**:
-                - Previous Occurrence: Likelihood this has occurred before based on incident type
-                - RCA/CAPA Adequacy: Assessment of what investigation depth and CAPA scope needed
+                
+              **Historic Review**: Previous occurrences, recurrence likelihood, historical context, and required investigation depth and CAPA scope
+              
               **CAPA**:
                 - Correction: Immediate fixes to address the specific incident
                 - Interim Action: Short-term measures to prevent immediate recurrence
                 - Corrective Action: Address root cause to prevent recurrence
                 - Preventive Action: Broader measures to prevent similar issues
-              **Investigation Summary**: Comprehensive summary including key findings, conclusions, and overall assessment
 
-              Return ONLY a valid JSON object with this exact structure (use underscores in key names):
+              Return ONLY a valid JSON object with this exact structure (all lowercase keys with underscores):
 
               {{
-                "Background": "Detailed background analysis based on transcript",
-                "Deviation_Triage": "Triage classification and risk assessment", 
-                "Discussion": {{
-                  "process": "Process analysis and potential gaps",
+                "background": "Detailed background analysis based on the provided information",
+                "discussion": {{
+                  "discuss_process": "Process analysis and potential gaps",
                   "equipment": "Equipment factors and considerations",
-                  "environment_people": "Environmental and human factors analysis", 
-                  "documentation": "Documentation adequacy assessment"
+                  "environment": "Environmental factors analysis", 
+                  "documentation_is_adequate": "Yes or No - Documentation adequacy assessment",
+                  "external_communication": "Analysis of external communication (emails, forms, batch records etc) to support investigation",
+                  "personnel_training": "Personnel training assessment and gaps",
+                  "equipment_qualification": "Equipment qualification status and issues"
                 }},
-                "Root_Cause_Analysis": {{
-                  "5_why": "5 Why methodology recommendation and initial analysis",
-                  "Fishbone": "Fishbone analysis categories and approach",
-                  "5Ms": "5Ms analysis covering all relevant factors",
-                  "FMEA": "FMEA recommendation and applicability"
+                "root_cause_analysis": {{
+                  "FishboneAnalysis": {{
+                    "people": "Human factors and personnel-related root causes",
+                    "method": "Process and procedure-related root causes",
+                    "machine": "Equipment and machinery-related root causes",
+                    "material": "Raw material and component-related root causes",
+                    "environment": "Environmental factors contributing to root cause",
+                    "measurement": "Measurement and monitoring system factors"
+                  }},
+                  "FiveWhy": "Complete 5 Why analysis - ask why 5 times to identify root cause"
                 }},
-                "Final_Assessment": {{
-                  "Patient_Safety": "Patient safety impact assessment and risk level",
-                  "Product_Quality": "Product quality impact and implications",
-                  "Compliance_Impact": "Regulatory compliance and GMP implications", 
-                  "Validation_Impact": "Impact on validated systems and processes",
-                  "Regulatory_Impact": "Regulatory reporting and authority notification needs"
+                "final_assessment": {{
+                  "patient_safety": "Patient safety impact assessment and risk level",
+                  "product_quality": "Product quality impact and implications",
+                  "compliance_impact": "Regulatory compliance and GMP implications", 
+                  "validation_impact": "Impact on validated systems and processes",
+                  "regulatory_impact": "Regulatory reporting and authority notification needs"
                 }},
-                "Historic_Review": {{
-                  "previous_occurrence": "Assessment of recurrence likelihood and historical context",
-                  "impact_to_adequacy_of_RCA_and_CAPA": "Required investigation depth and CAPA scope assessment"
-                }},
-                "CAPA": {{
-                  "Correction": "Immediate corrective measures to address the specific incident",
-                  "Interim_Action": "Short-term actions to prevent immediate recurrence",
-                  "Corrective_Action": "Root cause addressing actions to prevent recurrence", 
-                  "Preventive_Action": "Preventive measures to avoid similar issues system-wide"
-                }},
-                "Investigation_Summary": "Comprehensive investigation summary with key findings, conclusions, risk assessment, and overall incident characterization"
+                "historic_review": "Assessment of previous occurrences, recurrence likelihood, historical context, and required investigation depth and CAPA scope",
+                "capa": {{
+                  "correction": "Immediate corrective measures to address the specific incident",
+                  "interim_action": "Short-term actions to prevent immediate recurrence",
+                  "corrective_action": "Root cause addressing actions to prevent recurrence", 
+                  "preventive_action": "Preventive measures to avoid similar issues system-wide"
+                }}
               }}
               '''
       response = self.get_openai_response(prompt)
