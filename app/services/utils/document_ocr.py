@@ -4,6 +4,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google.cloud import documentai
 from google.api_core.client_options import ClientOptions
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi.responses import JSONResponse
 
 # Import the file converter and processor
 from app.services.utils.convert_file import FileConverter
@@ -12,6 +14,15 @@ from app.services.utils.process_file import FileProcessor
 # Load environment variables
 load_dotenv()
 
+router = APIRouter()
+
+# Create a reusable service instance for endpoints
+_ocr_service = None
+def _get_ocr_service():
+    global _ocr_service
+    if _ocr_service is None:
+        _ocr_service = DocumentOCR()
+    return _ocr_service
 class DocumentOCR:
 
     def process_file(self, file_path):
@@ -291,6 +302,88 @@ class DocumentOCR:
                 
         except Exception as e:
             return None
+
+# API Endpoints
+@router.post("/document", tags=["ocr"])
+async def ocr_document(file: UploadFile = File(...)):
+    """Extract text from a single uploaded document using OCR (and conversion if needed)."""
+    temp_path = None
+    try:
+        # Persist upload to a temporary file with proper suffix
+        suffix = os.path.splitext(file.filename)[1] or ""
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            temp_path = tmp.name
+            content = await file.read()
+            tmp.write(content)
+
+        service = _get_ocr_service()
+        text = service.process_single_file(temp_path)
+
+        if text is None:
+            raise HTTPException(status_code=500, detail="OCR failed to extract text")
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "filename": file.filename,
+                "extracted_text": text,
+                "message": "OCR completed successfully"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR error: {str(e)}")
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+@router.post("/documents", tags=["ocr"])
+async def ocr_documents(files: list[UploadFile] = File(...)):
+    """Extract text from multiple uploaded documents; returns a mapping of filename -> text/error."""
+    temp_paths = []
+    try:
+        # Save uploads to temp files and track mapping
+        upload_map = {}
+        for f in files:
+            suffix = os.path.splitext(f.filename)[1] or ""
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                path = tmp.name
+                content = await f.read()
+                tmp.write(content)
+                temp_paths.append(path)
+                upload_map[path] = f.filename
+
+        service = _get_ocr_service()
+        results = {}
+        for path, original_name in upload_map.items():
+            try:
+                text = service.extract_text(path)
+                results[original_name] = text
+            except Exception as e:
+                results[original_name] = f"Error: {str(e)}"
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "success",
+                "results": results,
+                "message": "OCR completed for uploaded documents"
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"OCR error: {str(e)}")
+    finally:
+        for p in temp_paths:
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
 
 # Example usage and testing functions
 def test_single_file(file_path):
