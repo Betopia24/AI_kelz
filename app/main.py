@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from app.services.utils.ai_analysis import AIAnalyzer
 from app.services.utils.transcription import VoiceTranscriber
 from app.services.utils.document_ocr import DocumentOCR
+from app.services.utils.document_ocr import router as ocr_router
 import os
 import tempfile
 import shutil
@@ -55,6 +56,7 @@ router.include_router(quality_review_router, prefix="/quality-review", tags=["de
 # Include QTA revision router
 router.include_router(qta_revision_router, tags=["qta-revision"])
 router.include_router(qta_review_router, tags=["qta-review"])
+router.include_router(ocr_router, prefix="/ocr", tags=["ocr"])
 
 # --- DEFAULT TAG ENDPOINTS ---
 @router.post("/ai-analysis/", tags=["default"])
