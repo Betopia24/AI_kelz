@@ -51,7 +51,7 @@ router.include_router(investigation_modify_router, prefix="/deviation", tags=["d
 router.include_router(incident_modify_router, prefix="/deviation", tags=["deviation"])
 
 # Include quality review router
-router.include_router(quality_review_router, prefix="/quality-review", tags=["deviation"])
+router.include_router(quality_review_router, prefix="/quality-review", tags=["review"])
 
 # Include QTA revision router
 router.include_router(qta_revision_router, tags=["qta-revision"])
