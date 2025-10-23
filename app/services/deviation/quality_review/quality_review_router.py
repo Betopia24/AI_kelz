@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.services.deviation.quality_review.quality_review import QualityReviewer
-from app.services.deviation.quality_review.quality_review_schema import PerMinuteReview, PerMinuteResponse, FinalQualityReview, FinalQualityReviewResponse
+from app.services.deviation.quality_review.quality_review_schema import PerMinuteReview, PerMinuteResponse, FinalQualityReviewRequest, FinalQualityReviewResponse
 
 
 router = APIRouter()
@@ -17,7 +17,7 @@ async def get_per_minute_review(request_data: PerMinuteReview):
 
 
 @router.post("/final_review", response_model=FinalQualityReviewResponse)
-async def get_final_review(request: FinalQualityReview):
+async def get_final_review(request: FinalQualityReviewRequest):
 
     try:
         response = quality_reviewer.final_review(request)

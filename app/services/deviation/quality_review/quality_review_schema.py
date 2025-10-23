@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, List, Any, Union
-from datetime import datetime
+from typing import Optional, Dict, List, Any
 
 
 class PerMinuteReview(BaseModel):
@@ -12,21 +11,21 @@ class PerMinuteResponse(BaseModel):
     quality_review: str
     sme_review: str
 
-class FinalQualityReview(BaseModel):
+class FinalQualityReviewRequest(BaseModel):
     transcription: str
-    document: Optional[str] = None
+    document: Optional[Dict[str, Any]] = None
     existing_background: str
-    existing_discussion: List[Dict[str, Any]]  
+    existing_immediate_actions: str 
+    existing_discussion: str
     existing_root_cause_analysis: List[Dict[str, Any]]
-    existing_final_assessment: List[Dict[str, Any]]  
-    existing_historic_review: List[Dict[str, Any]] 
-    existing_capa: List[Dict[str, Any]] 
-    existing_attendees:Optional[List[str]]=None
+    existing_fishbone_diagram: List[Dict[str, Any]]
+    existing_historic_review: str
+    existing_capa: str
+    existing_impact_assessment: str
+    existing_conclusion:str
 
 
 class FinalQualityReviewResponse(BaseModel):
-    transcription: str
-    document:str
     background: str
     immediate_actions: str
     discussion: str
