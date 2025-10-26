@@ -35,7 +35,7 @@ async def generate_final_investigation_report(request_data: InvestigationRequest
     
 
 @router.post("/modify_investigation_report", response_model=FinalInvestigationReportResponse)
-async def generate_final_investigation_report(request_data: RepeateInvestigationRequest):
+async def repeat_investigation_report(request_data: RepeateInvestigationRequest):
     try:
         response = investigation.repeat_investigation(request_data)
         return response 

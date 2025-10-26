@@ -296,7 +296,6 @@ Attendees: {input.exisiting_attendees}
                 - The output MUST be valid JSON parseable by python's json.loads.
                 - Do NOT include markdown, surrounding backticks, or explanatory text. Only output the JSON object.
                 - Preserve the types: lists as JSON arrays, objects as JSON objects, strings as strings.
-                - Use /red markers only around newly added or changed text inside string fields.
 
                 Use the provided transcription and existing fields to produce the final report now.
                 '''
