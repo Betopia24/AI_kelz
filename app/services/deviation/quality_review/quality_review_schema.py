@@ -35,3 +35,16 @@ class FinalQualityReviewResponse(BaseModel):
     capa: str
     impact_assessment: str
     conclusion: str
+
+
+class RepeatReviewRequest(BaseModel):
+    transcription: str
+    existing_background: str
+    existing_immediate_actions: str 
+    existing_discussion: str
+    existing_root_cause_analysis: List[Dict[str, Any]]
+    existing_fishbone_diagram: List[Dict[str, Any]]
+    existing_historic_review: str
+    existing_capa: str
+    existing_impact_assessment: str
+    existing_conclusion:str
