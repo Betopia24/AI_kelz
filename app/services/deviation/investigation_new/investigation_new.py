@@ -1,7 +1,7 @@
 import re
 import json
 from app.services.utils.transcription import VoiceTranscriber
-from app.services.deviation.investigation_new.investigation_new_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest, FinalInvestigationReportResponse
+from app.services.deviation.investigation_new.investigation_new_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest, FinalInvestigationReportResponse,RepeateInvestigationRequest
 import openai
 import os
 class InvestigationService:
@@ -244,6 +244,65 @@ Attendees: {input.exisiting_attendees}
       parsed_response = self.clean_and_parse_json(response)
       
       return parsed_response
+    
+    def repeat_investigation(self, input:RepeateInvestigationRequest) -> FinalInvestigationReportResponse:
+        # Build a strict prompt that maps inputs to the expected output schema exactly.
+        prompt = f'''
+                You are an expert pharmaceutical deviation investigation with 20+ years of experience in GMP, quality systems, and regulatory compliance. Change the existing investigation based on the new transcript provided. 
+                Input (fields):
+                transcription: {input.transcription}
+                existing_background: {input.existing_background}
+                existing_immediate_actions: {input.existing_immediate_actions}
+                existing_discussion: {input.existing_discussion}
+                existing_root_cause_analysis: {json.dumps(input.existing_root_cause_analysis)}
+                existing_fishbone_diagram: {json.dumps(input.existing_fishbone_diagram)}
+                existing_historic_review: {input.existing_historic_review}
+                existing_capa: {input.existing_capa}
+                existing_impact_assessment: {input.existing_impact_assessment}
+                existing_conclusion: {input.existing_conclusion}
+
+                JSON Structure Required:
+
+                {{
+                  "background": "2-3 sentences describing what happened, when, where, who was involved, and immediate circumstances. Example: During in-process weight checks on Line 5, tablets were found below specification. Deviation identified by operators Michael E., Saidi M., and Rana S. Immediate escalation was made to QA.",
+                  "immediate_actions": "List the immediate steps taken when the deviation was discovered - quarantine, stopping processes, notifications, etc. Example: Quarantined all tablets from last compliant in-process check. Stopped compression until investigation. Secured machine and notified QA. Batch record and settings reviewed.",
+                  "discussion": "Cover Product Quality impact, Validation Impact, Compliance implications, Process controls, Equipment factors, Personnel factors, Documentation adequacy, and Most probable root cause statement. Include detailed analysis of the overall process, variables, environmental factors, equipment settings, validated parameters, documentation controls, SOPs, personnel training, equipment qualification, and maintenance. End with the most probable root cause statement.",
+                  "root_cause_analysis": {{
+                    "FishboneAnalysis": {{
+                      "machine": "Specific machine-related factors like feeder malfunction, compression force variation, tooling wear, speed and low fill",
+                      "material": "Material-related factors like blend flow issues, granule size variability, bulk density",
+                      "people": "Human factors like operator errors, training deficiencies, procedural non-compliance",
+                      "method": "Process-related factors like in-process check frequency, SOP adherence",
+                      "measurement": "Measurement system issues like equipment calibration, weight check accuracy",
+                      "environment": "Environmental factors like humidity/temperature affecting blend flow",
+                    }},
+                    "FiveWhy": "Complete 5 Why analysis for the root cause identification"
+                  }},
+                    "fishbone_diagram": [
+                      {{"machine": ["feeder malfunction", "compression force variation", "tooling wear", "speed and low fill"]}},
+                      {{"material": ["blend flow issues", "granule size variability", "bulk density"]}},
+                      {{"people": ["setup error", "adjustment deviation", "training gaps"]}},
+                      {{"method": ["in-process check frequency", "SOP adherence"]}},
+                      {{"measurement": ["equipment calibration", "weight check accuracy"]}},
+                      {{"environment": ["humidity/temperature affecting blend flow"]}}
+                    ],
+                  "historical_review": "Review of previous occurrences, trends, data analysis, equipment calibration/qualification records verification. Example: No recent findings; review of last 6 months deviations and PQR data ongoing. Equipment calibration/qualification records to be verified.",
+                  "capa": "CAPA plan to prevent and early detection of non-conformance. Include Correction (immediate fixes), Corrective Action (root cause prevention), and Preventive Action (system-wide improvements)",
+                  "impact_assessment": "Cover Patient Safety, Product Quality, and Validation impacts with specific risk levels and implications",
+                  "conclusion": "Deviation classification (Major/Minor), key findings, CAPA summary, and meeting attendees. Example: Major deviation due to product quality and validation impact. CAPA to include: investigation closure, operator retraining if required, equipment review, possible SOP/in-process check frequency update. Meeting attendees: [list names]."
+                }}
+
+                Important formatting rules:
+                - The output MUST be valid JSON parseable by python's json.loads.
+                - Do NOT include markdown, surrounding backticks, or explanatory text. Only output the JSON object.
+                - Preserve the types: lists as JSON arrays, objects as JSON objects, strings as strings.
+                - Use /red markers only around newly added or changed text inside string fields.
+
+                Use the provided transcription and existing fields to produce the final report now.
+                '''
+        response = self.get_openai_response(prompt)
+        parsed_response = self.clean_and_parse_json(response)
+        return FinalInvestigationReportResponse(**parsed_response)
     
     def get_openai_response(self, prompt: str) -> str:
         completion = self.client.chat.completions.create(
