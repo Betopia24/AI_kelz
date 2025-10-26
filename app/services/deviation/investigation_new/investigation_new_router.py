@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Form
 from app.services.deviation.investigation_new.investigation_new import InvestigationService
 from app.services.deviation.investigation_new.investigation_new_schema import (
-   InvestigationResponse,FirstTimeInvestigationRequest,InvestigationRequest, FinalInvestigationReportResponse
+   InvestigationResponse,FirstTimeInvestigationRequest,InvestigationRequest, FinalInvestigationReportResponse,RepeateInvestigationRequest
 )
 
 router = APIRouter()
@@ -32,6 +32,16 @@ async def generate_final_investigation_report(request_data: InvestigationRequest
         return response 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.post("/modify_investigation_report", response_model=FinalInvestigationReportResponse)
+async def generate_final_investigation_report(request_data: RepeateInvestigationRequest):
+    try:
+        response = investigation.repeat_investigation(request_data)
+        return response 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 
     
