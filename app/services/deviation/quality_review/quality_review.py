@@ -67,7 +67,7 @@ class QualityReviewer:
         prompt = f'''
                 You are an expert pharmaceutical deviation investigation reviewer with 20+ years of experience in GMP, quality systems, and regulatory compliance.
 
-                You will be provided with the following input object (matching the FinalQualityReviewRequest schema). Use this data to produce a Final Quality Review JSON that exactly matches the FinalQualityReviewResponse schema.
+                You will be provided with the following input object. Use this data to produce a Final Quality Review JSON that exactly matches the FinalQualityReviewResponse schema.
 
                 Input (fields):
                 transcription: {input.transcription}
