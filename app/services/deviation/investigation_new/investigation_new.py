@@ -239,6 +239,10 @@ Historic Review: {input.existing_historic_review}
 CAPA: {input.existing_capa}
 Attendees: {input.exisiting_attendees}
 
+Important Fishbone Diagram Requirements:
+For each category (machine, material, people, method, measurement, environment), list a maximum of 2 reasons.
+Each reason should be no longer than 2 words.
+
 '''
       response = self.get_openai_response(prompt)
       parsed_response = self.clean_and_parse_json(response)
