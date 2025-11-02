@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Form
-from app.services.deviation.investigation_new.investigation_new import InvestigationService
-from app.services.deviation.investigation_new.investigation_new_schema import (
+from fastapi import APIRouter, HTTPException
+from app.services.deviation.investigation.investigation import InvestigationService
+from app.services.deviation.investigation.investigation_schema import (
    InvestigationResponse,FirstTimeInvestigationRequest,InvestigationRequest, FinalInvestigationReportResponse,RepeateInvestigationRequest
 )
 

@@ -25,35 +25,22 @@ voice_transcriber = VoiceTranscriber()
 document_ocr = DocumentOCR()
 
 # Import and include routers
-from app.services.deviation.incident import incident_router
-from app.services.deviation.attchement.attachment_router import router as attachment_router
 from app.services.deviation.initiation.initiation_route import router as initiation_router
-# from app.services.deviation.investigation.investigation_router import router as investigation_router
-from app.services.deviation.investigation_new.investigation_new_router import router as investigation_router
+
+from app.services.deviation.investigation.investigation_router import router as investigation_router
 from app.services.deviation.quality_review.quality_review_router import router as quality_review_router
 from app.services.QTA.QTA_revision.QTA_revision_router import router as qta_revision_router
 from app.services.QTA.QTA_review.qta_review_router import router as qta_review_router
-from app.services.deviation.Inverstigation_modify.Inverstigation_modify_route import router as investigation_modify_router
-from app.services.deviation.incident_modify.incident_modify_router import router as incident_modify_router
-from app.services.deviation.impact_assessment.impact_assessment_route import register_impact_assessment_routes
+
 
 # Register incident routes
-incident_router.register_incident_routes(router)
 
-# Register impact assessment routes
-register_impact_assessment_routes(router)
 
 # Include file extract router under deviation tag
-router.include_router(attachment_router, prefix="/Attachment", tags=["deviation"])
+
 router.include_router(initiation_router, prefix="/initiation", tags=["initiation"])
 router.include_router(investigation_router, prefix="/investigation", tags=["investigation"])
-router.include_router(investigation_modify_router, prefix="/deviation", tags=["deviation"])
-router.include_router(incident_modify_router, prefix="/deviation", tags=["deviation"])
-
-# Include quality review router
 router.include_router(quality_review_router, prefix="/quality-review", tags=["review"])
-
-# Include QTA revision router
 router.include_router(qta_revision_router, tags=["qta-revision"])
 router.include_router(qta_review_router, tags=["qta-review"])
 router.include_router(ocr_router, prefix="/ocr", tags=["ocr"])

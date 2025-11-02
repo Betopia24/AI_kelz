@@ -1,7 +1,7 @@
 import re
 import json
 from app.services.utils.transcription import VoiceTranscriber
-from app.services.deviation.investigation_new.investigation_new_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest, FinalInvestigationReportResponse,RepeateInvestigationRequest
+from app.services.deviation.investigation.investigation_schema import FirstTimeInvestigationRequest, InvestigationResponse,InvestigationRequest, FinalInvestigationReportResponse,RepeateInvestigationRequest
 import openai
 import os
 class InvestigationService:
