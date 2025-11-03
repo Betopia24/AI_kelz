@@ -17,47 +17,49 @@ class QTARevision:
     
 
 
-    def get_per_minute_summary(self, input_data:  per_minute_qta_revision_request) -> per_minute_qta_revision_response:
+    def get_per_minute_summary(self, input_data: per_minute_qta_revision_request) -> per_minute_qta_revision_response:
         prompt = f"""
-            You are a language model that receives audio transcription {input_data.transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following topics are discussed.
+            You are a language model that receives an audio transcription related to quality and change processes.
+            The transcription text is: {input_data.transcribed_text}
 
+            You may also receive previous extracted information:
+            - Existing changed details: {input_data.existing_changed_details}
+            - Existing action summary: {input_data.existing_action_summary}
+
+            Your task is to analyze the new transcription and update two sections:
+
+            1. **changed_details** — List all topics discussed with brief explanations (1–2 sentences each).  
             Topics to detect:
+                - Change Details (Upload change requests, Change control processes)
+                - CAPA (Corrective and Preventive Actions)
+                - SME (Subject Matter Expert) Inputs and Concerns
+                - Gap Assessment (especially about in-house vs external templates)
 
-            1. Change Details
-            - Upload change requests
-            - Change control processes
+            2. **action_summary** — Provide a concise list of concrete actions, next steps, or follow-up tasks mentioned in the audio.  
+            Include actions required by CAPA, Change Control, or Change Requests.  
+            If a gap assessment or document comparison is required, describe that as well.
 
-            2. CAPA or Corrective and Preventive Actions
-
-            3. SME (Subject Matter Expert) Inputs and Concerns
-
-            4. Gap Assessment
-            - Specifically, whether a gap assessment is required between in-house and external document templates
-
-            You may also receive existing details from earlier reviews {input_data.existing_details}. If a topic was already covered previously, you must still include it in your response if it is present in the new text.
-
-            Instructions:
-
-            1. Identify and list all relevant topics covered in the text under `changed_details`, along with 1–2 sentences for each explaining what was discussed.
-            2. Include both new and previously covered relevant details, preserving the markdown format.
-            3. Respond ONLY with valid JSON, no markdown, no explanations.
-            4. Your output must follow the structure below:
+            **Important Instructions:**
+            - Always preserve and include any relevant content from the existing sections if still relevant.
+            - If a topic was mentioned before but appears again, keep or update it as needed (do not remove unless explicitly contradicted).
+            - Maintain markdown format for `changed_details` using `- **Topic**:` structure.
+            - Write clear bullet points for `action_summary`.
+            - Respond **only with valid JSON**, no markdown formatting outside the JSON and no explanations.
 
             Example Input:
-
             {{
-            "text": "We also discussed whether a gap assessment is needed for external templates.",
-            "existing_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process."
+            "text": "We discussed uploading the new change request and whether a gap assessment is required for external templates.",
+            "existing_changed_details": "- **SME Inputs and Concerns**: SME raised issues about document alignment.",
+            "existing_action_summary": "- Review SME feedback from last session."
             }}
 
             Example Output:
-
             {{
-            "changed_details": "- **Upload change requests**: The change request was uploaded yesterday.\n- **SME Inputs and Concerns**: SME had concerns about the process.\n- **Gap Assessment**: The team discussed whether a gap assessment is required for external document templates."
+            "changed_details": "- **SME Inputs and Concerns**: SME raised issues about document alignment.\n- **Change Details**: The team discussed uploading a new change request.\n- **Gap Assessment**: A gap assessment may be required between in-house and external templates.",
+            "action_summary": "- Upload the new change request for review.\n- Conduct gap assessment between internal and external templates.\n- Review SME feedback for document alignment."
             }}
+        """
 
-            Use this logic and structure when handling the text input and associated data.
-            """
 
 
 
