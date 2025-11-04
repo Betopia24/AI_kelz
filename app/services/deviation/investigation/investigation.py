@@ -21,8 +21,8 @@ class InvestigationService:
               5. Only use "Not found in document" if absolutely no relevant information or context exists for that specific field
               6. Think like a seasoned investigator - what would you look for, what questions would you ask, what actions would you recommend?
 
-              Existing Background Details:{input.existing_background_details}
-              Existing Impact Assessment:{input.existing_impact_assessment}
+              Existing Background Details:{input.background_details}
+              Existing Impact Assessment:{input.impact_assessment}
               Document Information:{input.document_information}
 
               Based on your analysis, provide a comprehensive investigation covering these areas:
@@ -108,12 +108,12 @@ class InvestigationService:
               Transcript: {input.transcript}
               
               Existing Investigation Data:
-              Existing Background: {input.existing_background or "Not provided"}
-              Existing Discussion: {input.existing_discussion or "Not provided"}
-              Existing Root Cause Analysis: {input.existing_root_cause_analysis or "Not provided"}
-              Existing Final Assessment: {input.existing_final_assessment or "Not provided"}
-              Existing Historic Review: {input.existing_historic_review or "Not provided"}
-              Existing CAPA: {input.existing_capa or "Not provided"}
+              Existing Background: {input.background or "Not provided"}
+              Existing Discussion: {input.discussion or "Not provided"}
+              Existing Root Cause Analysis: {input.root_cause_analysis or "Not provided"}
+              Existing Final Assessment: {input.final_assessment or "Not provided"}
+              Existing Historic Review: {input.historic_review or "Not provided"}
+              Existing CAPA: {input.capa or "Not provided"}
 
               Based on your analysis, provide a comprehensive investigation covering these areas:
 
@@ -231,13 +231,13 @@ JSON Structure Required:
 
 Existing Investigation Data:
 Transcript: {input.transcript}
-Background: {input.existing_background}
-Discussion: {input.existing_discussion}
-Root Cause Analysis: {input.existing_root_cause_analysis}
-Final Assessment: {input.existing_final_assessment}
-Historic Review: {input.existing_historic_review}
-CAPA: {input.existing_capa}
-Attendees: {input.exisiting_attendees}
+Background: {input.background}
+Discussion: {input.discussion}
+Root Cause Analysis: {input.root_cause_analysis}
+Final Assessment: {input.final_assessment}
+Historic Review: {input.historic_review}
+CAPA: {input.capa}
+Attendees: {input.attendees}
 
 Important Fishbone Diagram Requirements:
 For each category (machine, material, people, method, measurement, environment), list a maximum of 2 reasons.
@@ -255,15 +255,15 @@ Each reason should be no longer than 2 words.
                 You are an expert pharmaceutical deviation investigation with 20+ years of experience in GMP, quality systems, and regulatory compliance. Change the existing investigation based on the new transcript provided. 
                 Input (fields):
                 transcription: {input.transcription}
-                existing_background: {input.existing_background}
-                existing_immediate_actions: {input.existing_immediate_actions}
-                existing_discussion: {input.existing_discussion}
-                existing_root_cause_analysis: {json.dumps(input.existing_root_cause_analysis)}
-                existing_fishbone_diagram: {json.dumps(input.existing_fishbone_diagram)}
-                existing_historic_review: {input.existing_historic_review}
-                existing_capa: {input.existing_capa}
-                existing_impact_assessment: {input.existing_impact_assessment}
-                existing_conclusion: {input.existing_conclusion}
+                existing_background: {input.background}
+                existing_immediate_actions: {input.immediate_actions}
+                existing_discussion: {input.discussion}
+                existing_root_cause_analysis: {json.dumps(input.root_cause_analysis)}
+                existing_fishbone_diagram: {json.dumps(input.fishbone_diagram)}
+                existing_historic_review: {input.historic_review}
+                existing_capa: {input.capa}
+                existing_impact_assessment: {input.impact_assessment}
+                existing_conclusion: {input.conclusion}
 
                 JSON Structure Required:
 
