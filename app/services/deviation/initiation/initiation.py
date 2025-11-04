@@ -34,11 +34,11 @@ class Initiation:
 
                 The following are the inputs:
 
-                - {input_data.existing_incident_title}: (Optional) Previously extracted incident title, if any. If it exists, use it unless in transcription there is a specific mention; if not, generate a new one.
+                - {input_data.incident_title}: (Optional) Previously extracted incident title, if any. If it exists, use it unless in transcription there is a specific mention; if not, generate a new one.
                 - {input_data.transcribed_text}: The full transcript up to this point (latest cumulative 10-second update).
-                - {input_data.existing_background_details}: (Optional) Previously extracted background details, if any.
-                - {input_data.existing_background_attendee}: (Optional) List of previously known attendee names.
-                - {input_data.existing_impact_assessment}: (Optional) Previously extracted impact assessment data, if any.
+                - {input_data.background_details}: (Optional) Previously extracted background details, if any.
+                - {input_data.background_attendee}: (Optional) List of previously known attendee names.
+                - {input_data.impact_assessment}: (Optional) Previously extracted impact assessment data, if any.
 
                 ---
 
@@ -85,7 +85,7 @@ class Initiation:
 
                 1. Correct any transcription errors in `input.transcribed_text`.
                 2. Use the full transcript to extract structured information.
-                3. Incorporate previously extracted details (from `input.existing_background_details`, etc.) where applicable.
+                3. Incorporate previously extracted details (from `input.background_details`, etc.) where applicable.
                 4. If new information contradicts or improves prior data, update it.
                 5. All keys must be present in the output structure.
                 6. Respond ONLY with valid JSON — no markdown, no explanations, no code blocks.
@@ -97,9 +97,9 @@ class Initiation:
                 {{
                 "input": {{
                     "transcribed_text": "The team reviewed the updated templates and agreed that no immediate action was required.",
-                    "existing_background_details": null,
-                    "existing_background_attendee": ["Alice", "Bob"],
-                    "existing_impact_assessment": null
+                    "background_details": null,
+                    "background_attendee": ["Alice", "Bob"],
+                    "impact_assessment": null
                 }}
                 }}
 
@@ -162,7 +162,7 @@ class Initiation:
         prompt = f"""
                 You are a helpful assistant for analyzing structured meeting data.
 
-                Input data: {input.existing_background_details}
+                Input data: {input.background_details}
 
                 Your task is to check **which fields have not been filled yet** — i.e., which fields have empty string values ("").
 
@@ -182,7 +182,7 @@ class Initiation:
 
                 Example input:
 
-                existing_background_details = {{
+                background_details = {{
                     "Who": "Bob and Alice from QA",
                     "What": "CAPA review for deviation 0059 flagged during last week's internal audit",
                     "Where": "",
@@ -252,11 +252,11 @@ class Initiation:
         
         ## INPUT DATA:
         - Transcribed text: {input_data.transcribed_text}
-        - Existing incident title: {input_data.existing_incident_title if input_data.existing_incident_title else "Not provided"}
-        - Existing background details: {json.dumps(input_data.existing_background_details) if input_data.existing_background_details else "Not provided"}
-        - Existing meeting attendees: {json.dumps(input_data.existing_background_attendee) if input_data.existing_background_attendee else "Not provided"}
-        - Existing impact assessment: {json.dumps(input_data.existing_impact_assessment) if input_data.existing_impact_assessment else "Not provided"}
-        
+        - Incident title: {input_data.incident_title if input_data.incident_title else "Not provided"}
+        - Background details: {json.dumps(input_data.background_details) if input_data.background_details else "Not provided"}
+        - Meeting attendees: {json.dumps(input_data.background_attendee) if input_data.background_attendee else "Not provided"}
+        - Impact assessment: {json.dumps(input_data.impact_assessment) if input_data.impact_assessment else "Not provided"}
+
         ## OUTPUT FORMAT:
         Generate a structured incident report with the following 5 main sections. Your response must be a JSON object with these exact sections:
         
@@ -322,13 +322,13 @@ class Initiation:
         IMPORTANT: Return ONLY valid JSON with the five requested sections. No explanations, no markdown code blocks, just the JSON object.
         """
     
-    def modify_incident_report(self, input_data: ModifyIncidentReportRequest) -> str:
+    def modify_incident_report(self, input_data: ModifyIncidentReportRequest) -> FormalIncidentReport:
         prompt= f"""
         You are an expert AI assistant for pharmaceutical quality management and deviation reporting.
         Your task is to generate a formal incident report based on the transcription and any existing details provided.
         
         ## INPUT DATA:
-        - Existing incident report: {input_data.existing_report.json()}
+        - Report: {input_data.report.json()}
         - Modifications needed: {input_data.modifications}
         
         
