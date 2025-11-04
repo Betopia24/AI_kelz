@@ -3,7 +3,7 @@ import json
 import openai
 from fastapi import HTTPException
 from dotenv import load_dotenv
-from .QTA_revision_schema import per_minute_qta_revision_request, per_minute_qta_revision_response, final_qta_revision_request, final_qta_revision_response
+from .QTA_revision_schema import per_minute_qta_revision_request, per_minute_qta_revision_response, final_qta_revision_request, final_qta_revision_response, repeat_qta_revision_request
 from app.services.utils.document_ocr import DocumentOCR
 from pydantic import ValidationError
 
@@ -23,8 +23,8 @@ class QTARevision:
             The transcription text is: {input_data.transcribed_text}
 
             You may also receive previous extracted information:
-            - Existing changed details: {input_data.existing_changed_details}
-            - Existing action summary: {input_data.existing_action_summary}
+            - Existing changed details: {input_data.changed_details}
+            - Existing action summary: {input_data.action_summary}
 
             Your task is to analyze the new transcription and update two sections:
 
@@ -122,18 +122,15 @@ class QTARevision:
                 
     def repeat_final_summary(
     self,
-    existing_document: str,
-    existing_action_summary: str,
-    existing_change_details: dict,
-    user_changes: str
+    input_data: repeat_qta_revision_request
 ) -> final_qta_revision_response:
         prompt = f"""
         You are an AI assistant tasked with revising a client document according to user-provided changes and an updated document.
 
         Instructions:
-        1. Carefully analyze the user changes: {user_changes}
-        2. Apply these changes to the existing document: {existing_document} to produce a revised document.
-        3. Update the existing action summary: {existing_action_summary} and existing change details: {existing_change_details} based on the new revisions.
+        1. Carefully analyze the user changes: {input_data.transcribed_text}
+        2. Apply these changes to the existing document: {input_data.document} to produce a revised document.
+        3. Update the existing action summary: {input_data.action_summary} and existing change details: {input_data.change_details} based on the new revisions.
 
         Your response must be a single JSON object with the following keys:
         - "action_summary": A concise summary of all changes made (as a string).
