@@ -96,9 +96,9 @@ class QTARevision:
                 3. Apply the necessary changes to the client_document to create a new version that reflects the user's input.
 
                 After updating the document, return:
-                - **action_summary**: A brief summary of the changes you made.
-                - **change_details**: A categorized breakdown of changes (e.g., CAPA – Corrective and Preventive Actions, SME Inputs and Concerns, Gap Assessment).
-                - **new_document_text**: The final revised version of the client document.
+                - **action_summary**: A brief summary of the changes you made (as a string).
+                - **change_details**: A detailed breakdown of changes as a single string with markdown formatting. Use bullet points or numbered lists to organize categories like CAPA, SME Inputs, Gap Assessment, etc.
+                - **new_document_text**: The final revised version of the client document (as a string).
 
                 ### User Instructions:
                 {input_data.transcribed_text}
@@ -109,7 +109,15 @@ class QTARevision:
                 ### Updated User Document (Reference for Changes):
                 {input_data.user_document}
 
-                Now, analyze and revise the client document accordingly. Return only the structured response in JSON format with keys: action_summary, change_details, and new_document_text.
+                **IMPORTANT**: Return ONLY a JSON object with exactly these three keys: "action_summary", "change_details", and "new_document_text". 
+                The "change_details" field must be a single string (not an object or array). Use markdown formatting within the string for structure.
+
+                Example format:
+                {{
+                  "action_summary": "Updated contract terms and modified payment schedule...",
+                  "change_details": "- **Parties and Formatting**: XYZ Solutions Inc. is now listed as the first party\\n- **Scope of Work**: Service description updated to digital strategy\\n- **Payment Terms**: Fee changed from $15,000 to $5,000 per month",
+                  "new_document_text": "This Agreement is entered into..."
+                }}
                 """
                 
     def repeat_final_summary(
@@ -128,13 +136,21 @@ class QTARevision:
         3. Update the existing action summary: {existing_action_summary} and existing change details: {existing_change_details} based on the new revisions.
 
         Your response must be a single JSON object with the following keys:
-        - "action_summary": A concise summary of all changes made.
-        - "change_details": A detailed and categorized dictionary of changes (e.g., CAPA, SME Inputs and Concerns, Gap Assessment).
-        - "new_document_text": The complete final revised client document text.
+        - "action_summary": A concise summary of all changes made (as a string).
+        - "change_details": A detailed string of changes using markdown formatting. Use bullet points to organize categories (e.g., CAPA, SME Inputs and Concerns, Gap Assessment). This must be a single string, not an object or array.
+        - "new_document_text": The complete final revised client document text (as a string).
 
-        IMPORTANT:
+        **IMPORTANT**:
         - Return **ONLY** the JSON object, no explanations, no additional text.
         - Ensure the JSON is valid and properly formatted.
+        - The "change_details" field must be a STRING with markdown formatting, not an object or array.
+
+        Example format:
+        {{
+          "action_summary": "Updated contract terms...",
+          "change_details": "- **Category 1**: Description of changes\\n- **Category 2**: More changes\\n- **Category 3**: Additional modifications",
+          "new_document_text": "Complete document text here..."
+        }}
 
         Now, proceed with the analysis and revision, then respond with the JSON output only.
         """
