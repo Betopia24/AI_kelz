@@ -188,10 +188,11 @@ async def process_final_revision(
 
 @router.post("/final-qta-revision-repeat", response_model=final_qta_revision_response)
 async def process_final_revision(request:repeat_qta_revision_request):
-    result = qta_service.repeat_final_summary(
-        request.existing_document,
-        request.existing_action_summary,
-        request.existing_change_details,
-        request.user_changes
-    )
-    return result
+    try:
+        result = qta_service.repeat_final_summary(request)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing repeat final revision: {str(e)}"
+        )

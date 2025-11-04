@@ -86,7 +86,7 @@ class QTARevision:
         response_dict = json.loads(response)
         return final_qta_revision_response(**response_dict)
 
-    def create_prompt(self ,input_data: per_minute_qta_revision_request) -> str:
+    def create_prompt(self ,input_data: final_qta_revision_request) -> str:
         return f"""
                 You are an AI assistant responsible for revising a client document based on user-provided instructions and a modified version of the document.
 
@@ -98,7 +98,7 @@ class QTARevision:
                 After updating the document, return:
                 - **action_summary**: A brief summary of the changes you made (as a string).
                 - **change_details**: A detailed breakdown of changes as a single string with markdown formatting. Use bullet points or numbered lists to organize categories like CAPA, SME Inputs, Gap Assessment, etc.
-                - **new_document_text**: The final revised version of the client document (as a string).
+                - **document_text**: The final revised version of the client document (as a string).
 
                 ### User Instructions:
                 {input_data.transcribed_text}
@@ -109,14 +109,14 @@ class QTARevision:
                 ### Updated User Document (Reference for Changes):
                 {input_data.user_document}
 
-                **IMPORTANT**: Return ONLY a JSON object with exactly these three keys: "action_summary", "change_details", and "new_document_text". 
+                **IMPORTANT**: Return ONLY a JSON object with exactly these three keys: "action_summary", "change_details", and "document_text". 
                 The "change_details" field must be a single string (not an object or array). Use markdown formatting within the string for structure.
 
                 Example format:
                 {{
                   "action_summary": "Updated contract terms and modified payment schedule...",
                   "change_details": "- **Parties and Formatting**: XYZ Solutions Inc. is now listed as the first party\\n- **Scope of Work**: Service description updated to digital strategy\\n- **Payment Terms**: Fee changed from $15,000 to $5,000 per month",
-                  "new_document_text": "This Agreement is entered into..."
+                  "document_text": "This Agreement is entered into..."
                 }}
                 """
                 
@@ -129,13 +129,13 @@ class QTARevision:
 
         Instructions:
         1. Carefully analyze the user changes: {input_data.transcribed_text}
-        2. Apply these changes to the existing document: {input_data.document} to produce a revised document.
+        2. Apply these changes to the existing document: {input_data.document_text} to produce a revised document.
         3. Update the existing action summary: {input_data.action_summary} and existing change details: {input_data.change_details} based on the new revisions.
 
         Your response must be a single JSON object with the following keys:
         - "action_summary": A concise summary of all changes made (as a string).
         - "change_details": A detailed string of changes using markdown formatting. Use bullet points to organize categories (e.g., CAPA, SME Inputs and Concerns, Gap Assessment). This must be a single string, not an object or array.
-        - "new_document_text": The complete final revised client document text (as a string).
+        - "document_text": The complete final revised client document text (as a string).
 
         **IMPORTANT**:
         - Return **ONLY** the JSON object, no explanations, no additional text.
@@ -146,7 +146,7 @@ class QTARevision:
         {{
           "action_summary": "Updated contract terms...",
           "change_details": "- **Category 1**: Description of changes\\n- **Category 2**: More changes\\n- **Category 3**: Additional modifications",
-          "new_document_text": "Complete document text here..."
+          "document_text": "Complete document text here..."
         }}
 
         Now, proceed with the analysis and revision, then respond with the JSON output only.
@@ -160,7 +160,7 @@ class QTARevision:
             return final_qta_revision_response(
                 action_summary=parsed["action_summary"],
                 change_details=parsed["change_details"],
-                new_document_text=parsed["new_document_text"]
+                document_text=parsed["document_text"]
             )
 
         except json.JSONDecodeError as e:
