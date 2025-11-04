@@ -4,8 +4,8 @@ from typing import Optional,Dict,Any
 
 class per_minute_qta_revision_request(BaseModel):
     transcribed_text:str
-    existing_changed_details:Optional[str]=None
-    existing_action_summary:Optional[str]=None
+    changed_details:Optional[str]=None
+    action_summary:Optional[str]=None
 
 class per_minute_qta_revision_response(BaseModel):
     changed_details:str
@@ -22,7 +22,7 @@ class final_qta_revision_response(BaseModel):
     
 class repeat_qta_revision_request(BaseModel):
     transcribed_text: str
-    existing_change_details: str
-    existing_action_summary: str
-    existing_document: str
+    change_details: str
+    action_summary: str
+    document: str
     
