@@ -3,7 +3,7 @@ import json
 import openai
 from fastapi import HTTPException
 from dotenv import load_dotenv
-from .qta_review_schema import per_minute_qta_review_request, per_minute_qta_review_response, final_qta_review_request, final_qta_review_response
+from .qta_review_schema import per_minute_qta_review_request, per_minute_qta_review_response, final_qta_review_request, final_qta_review_response, repeat_qta_review_request
 from app.services.utils.document_ocr import DocumentOCR
 
 load_dotenv()
@@ -19,39 +19,38 @@ class QTAreview:
         import json
 
         transcribed_text = json.dumps(input_data.transcribed_text)
-        existing_quality_review = json.dumps(input_data.existing_quality_review or "")
+        existing_quality_review = json.dumps(input_data.quality_review or [])
 
         prompt = f"""
                 You are a language model that receives audio transcript {transcribed_text} related to quality and change processes. Your task is to analyze the text and determine whether any of the following quality review aspects are discussed.
 
-                Quality Review Criteria to Analyze:
+                You may also receive existing details from earlier reviews {existing_quality_review}. If an item was already covered previously, you must still include it in your response if it is present in the new text.
 
+                **Change Summary**: Provide detailed summary of actions to be completed by AI on attachment or new documents as required auto transcription.
+
+                **Review Summary**: Observations and findings (e.g., "Temperature excursion in storage area. Product stored above acceptable limits").
+
+                Quality Review Criteria to Analyze:
                 • Have list of actions in action summary been completed satisfactorily?  
                 • Are content updates satisfactory?  
                 • Are template updates satisfactory?  
                 • Is the evidence compliant with data integrity?  
                 • SME Inputs and Concerns
 
-                You may also receive existing details from earlier reviews {existing_quality_review}. If an item was already covered previously, you must still include it in your response if it is present in the new text.
-
                 Instructions:
-
-                1. Identify and list all relevant quality review aspects covered in the text under `changed_details`, along with 1–2 sentences for each explaining what was said.  
-                2. Include both new and previously covered relevant details, preserving the markdown format.  
-                3. Respond ONLY with valid JSON, no markdown, no explanations.  
+                1. Analyze the transcript and update the quality_review, change_summary, and review_summary based on the content.
+                2. Include both new and previously covered relevant details, preserving existing information.
+                3. Respond ONLY with valid JSON, no markdown, no explanations.
                 4. Your output must follow the structure below:
 
-                Example Input:
-
                 {{
-                "text": "We reviewed the updated templates and the content looked good overall.",
-                "existing_quality_review": "- **SME Inputs and Concerns**: SME raised a concern about the clarity of one section."
-                }}
-
-                Example Output:
-
-                {{
-                "quality_review": "- **SME Inputs and Concerns**: SME raised a concern about the clarity of one section.\\n- **Are content updates satisfactory?**: The team reviewed the updated content and found it satisfactory.\\n- **Are template updates satisfactory?**: The updated templates were reviewed and found to be acceptable."
+                "quality_review": [
+                  {{"criterion": "Actions Completed", "assessment": "Description of completion status"}},
+                  {{"criterion": "Content Updates", "assessment": "Assessment of content updates"}},
+                  {{"criterion": "Template Updates", "assessment": "Assessment of template updates"}}
+                ],
+                "change_summary": "Single string with detailed summary of actions to be completed by AI on attachment or new documents",
+                "review_summary": "Single string with observations and findings from the review"
                 }}
                 """
 
@@ -76,7 +75,7 @@ class QTAreview:
         response_dict = json.loads(response)
         return final_qta_review_response(**response_dict)
 
-    def create_prompt(self, input_data: per_minute_qta_review_request) -> final_qta_review_response:
+    def create_prompt(self, input_data: final_qta_review_request) -> str:
         return f"""
                 You are an AI assistant responsible for updating a client document.
 
@@ -91,10 +90,15 @@ class QTAreview:
 
                 Your response must be a valid JSON object with the following fields:
 
-                - **quality_review**: A review of quality-related aspects (e.g., Are actions completed? Are content and template updates satisfactory? Is evidence compliant with data integrity? Are SME concerns addressed?).
-                - **change_summary**: A categorized summary of changes made (e.g., SME Inputs and Concerns, CAPA, Gap Assessment, etc.).
-                - **review_summary**: A brief evaluation of how well the updates align with the user's instructions and the reference document.
-                - **new_document_text**: The full revised version of the original document, reflecting all relevant changes.
+                - **quality_review**: A list of objects with criterion and assessment (e.g., [{{"criterion": "Actions Completed", "assessment": "All actions satisfactorily completed"}}, {{"criterion": "Content Updates", "assessment": "Content updates are satisfactory"}}, {{"criterion": "Data Integrity", "assessment": "Evidence compliant with data integrity standards"}}]).
+                - **change_summary**: A single string with detailed summary of actions to be completed by AI on attachment or new documents as required auto transcription.
+                - **review_summary**: A single string with observations and findings from the review (e.g., "Temperature excursion in storage area. Product stored above acceptable limits").
+                - **document_text**: The full revised version of the original document, reflecting all relevant changes.
+
+                **CRITICAL**: 
+                - quality_review must be a list of objects (not strings)
+                - change_summary must be a single string (not an array)
+                - review_summary must be a single string (not an array)
 
                 ### User Instructions:
                 {input_data.transcribed_text}
@@ -106,31 +110,55 @@ class QTAreview:
                 {input_data.original_document}
 
                 Generate the updated document and return the full response as a structured JSON object.
+
+                Example format:
+                {{
+                  "quality_review": [
+                    {{"criterion": "Actions Completed", "assessment": "All user instructions have been addressed"}},
+                    {{"criterion": "Content Updates", "assessment": "Content updates are satisfactory"}},
+                    {{"criterion": "Template Updates", "assessment": "Template structure improved"}}
+                  ],
+                  "change_summary": "Single string describing actions completed on documents",
+                  "review_summary": "Single string with observations and findings",
+                  "document_text": "Full updated document text here..."
+                }}
                 """
 
                 
-    def repeat_final_summary(existing_document, existing_quality_review, existing_change_summary, exists_review_summary,user_changes) -> final_qta_review_response:
+    def repeat_final_summary(self, input_data: repeat_qta_review_request) -> final_qta_review_response:
         prompt = f"""
         You are an AI assistant tasked with revising a client document based on user-provided feedback.
 
         ### Instructions:
         1. Carefully review the user changes below and interpret the intended modifications:
-        {user_changes}
+        {input_data.transcribed_text}
 
         2. Apply these changes to the existing document:
-        {existing_document}
+        {input_data.document}
 
         3. Based on the applied updates, revise the following summaries as needed:
-        - Existing Quality Review: {existing_quality_review}
-        - Existing Change Summary: {existing_change_summary}
-        - Existing Review Summary: {exists_review_summary}
+        - Existing Quality Review: {input_data.quality_review}
+        - Existing Change Summary: {input_data.change_summary}
+        - Existing Review Summary: {input_data.review_summary}
 
         ### Response Format:
         Return a valid JSON object with the following fields:
-        - "quality_review": Updated quality-related feedback (e.g., template/content updates, data integrity, SME concerns, etc.)
-        - "change_summary": A categorized summary of the changes made.
-        - "review_summary": A brief evaluation of how the new changes align with the document’s intent.
-        - "new_document_text": The fully revised client document incorporating the user changes.
+        - "quality_review": List of objects, each with "criterion" and "assessment" fields
+        - "change_summary": Single string with detailed summary of actions to be completed by AI on attachment or new documents as required auto transcription
+        - "review_summary": Single string with observations and findings from the review (e.g., "Temperature excursion in storage area. Product stored above acceptable limits")
+        - "document_text": The fully revised client document incorporating the user changes
+
+        Example format:
+        {{
+          "quality_review": [
+            {{"criterion": "Actions Completed", "assessment": "All user instructions have been addressed"}},
+            {{"criterion": "Content Updates", "assessment": "Content updates are satisfactory"}},
+            {{"criterion": "Template Updates", "assessment": "Template structure improved"}}
+          ],
+          "change_summary": "Single string describing actions completed on documents",
+          "review_summary": "Single string with observations and findings",
+          "document_text": "Full updated document text here..."
+        }}
 
         ### Important:
         - Return **only** the JSON object. No explanations or extra text.
@@ -138,7 +166,15 @@ class QTAreview:
 
         Begin processing now and return only the final JSON output.
         """
-        return prompt
+        
+        try:
+            response_text = self.get_openai_response(prompt)
+            parsed = json.loads(response_text)
+            return final_qta_review_response(**parsed)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Failed to parse LLM response as JSON: {e}\nRaw response:\n{response_text}")
+        except Exception as e:
+            raise ValueError(f"Error in repeat final summary: {e}")
 
     
     def get_openai_response (self, prompt:str)->str:

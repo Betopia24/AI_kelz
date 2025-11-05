@@ -7,7 +7,8 @@ from app.services.QTA.QTA_review.qta_review_schema import (
     per_minute_qta_review_request, 
     per_minute_qta_review_response, 
     final_qta_review_request, 
-    final_qta_review_response
+    final_qta_review_response,
+    repeat_qta_review_request
 )
 from app.services.QTA.QTA_review.qta_review import QTAreview
 from app.services.utils.convert_file import FileConverter
@@ -129,24 +130,13 @@ async def process_final_review(
 
 
 @router.post("/final-qta-review-repeat", response_model=final_qta_review_response)
-async def process_final_review(
-    existing_document: str = Form(...),
-    existing_quality_review: str = Form(...),
-    existing_change_summary: str = Form(...), 
-    exists_review_summary: str = Form(...),
-    user_changes: str = Form(...)
-):
+async def process_final_review_repeat(request: repeat_qta_review_request):
     try:
-        existing_change_summary_dict = json.loads(existing_change_summary)
-    except json.JSONDecodeError:
-        existing_change_summary_dict = {}  
-
-    result = qta_service.repeat_final_summary(
-        existing_document,
-        existing_quality_review,
-        existing_change_summary_dict,
-        exists_review_summary,
-        user_changes
-    )
-    return result
+        result = qta_service.repeat_final_summary(request)
+        return result
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error processing repeat final review: {str(e)}"
+        )
 
