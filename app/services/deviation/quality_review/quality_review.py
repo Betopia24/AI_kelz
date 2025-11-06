@@ -21,8 +21,8 @@ class QualityReviewer:
 
                 Input Data:
                 Transcription: {input.transcription}
-                Existing Quality Review: {input.quality_review or "Not provided"}
-                Existing SME Review: {input.sme_review or "Not provided"}
+                Existing Quality Review: {input.existing_quality_review or "Not provided"}
+                Existing SME Review: {input.existing_sme_review or "Not provided"}
 
                 If the existing quality review and SME review are not provided, base your analysis solely on the input transcription. Your analysis should address the following points for both the quality review and SME review:
 
@@ -72,15 +72,15 @@ class QualityReviewer:
                 Input (fields):
                 transcription: {input.transcription}
                 document: {json.dumps(input.document) if input.document else 'Not provided'}
-                existing_background: {input.background}
-                existing_immediate_actions: {input.immediate_actions}
-                existing_discussion: {input.discussion}
-                existing_root_cause_analysis: {json.dumps(input.root_cause_analysis)}
-                existing_fishbone_diagram: {json.dumps(input.fishbone_diagram)}
-                existing_historic_review: {input.historic_review}
-                existing_capa: {input.capa}
-                existing_impact_assessment: {input.impact_assessment}
-                existing_conclusion: {input.conclusion}
+                existing_background: {input.existing_background}
+                existing_immediate_actions: {input.existing_immediate_actions}
+                existing_discussion: {input.existing_discussion}
+                existing_root_cause_analysis: {json.dumps(input.existing_root_cause_analysis)}
+                existing_fishbone_diagram: {json.dumps(input.existing_fishbone_diagram)}
+                existing_historic_review: {input.existing_historic_review}
+                existing_capa: {input.existing_capa}
+                existing_impact_assessment: {input.existing_impact_assessment}
+                existing_conclusion: {input.existing_conclusion}
 
                 Instructions:
                 - Use the input data to update/augment the existing investigation where appropriate. When you add new or changed text within existing fields, wrap additions with /red and /red to enable simple change-tracking.
@@ -117,15 +117,15 @@ class QualityReviewer:
                 You are an expert pharmaceutical deviation investigation with 20+ years of experience in GMP, quality systems, and regulatory compliance. Change the existing investigation based on the new transcript provided. 
                 Input (fields):
                 transcription: {input.transcription}
-                existing_background: {input.background}
-                existing_immediate_actions: {input.immediate_actions}
-                existing_discussion: {input.discussion}
-                existing_root_cause_analysis: {json.dumps(input.root_cause_analysis)}
-                existing_fishbone_diagram: {json.dumps(input.fishbone_diagram)}
-                existing_historic_review: {input.historic_review}
-                existing_capa: {input.capa}
-                existing_impact_assessment: {input.impact_assessment}
-                existing_conclusion: {input.conclusion}
+                existing_background: {input.existing_background}
+                existing_immediate_actions: {input.existing_immediate_actions}
+                existing_discussion: {input.existing_discussion}
+                existing_root_cause_analysis: {json.dumps(input.existing_root_cause_analysis)}
+                existing_fishbone_diagram: {json.dumps(input.existing_fishbone_diagram)}
+                existing_historic_review: {input.existing_historic_review}
+                existing_capa: {input.existing_capa}
+                existing_impact_assessment: {input.existing_impact_assessment}
+                existing_conclusion: {input.existing_conclusion}
 
                 Instructions:
                 - Use the input data to update/augment the existing investigation where appropriate. When you add new or changed text within existing fields, wrap additions with /red and /red to enable simple change-tracking.
