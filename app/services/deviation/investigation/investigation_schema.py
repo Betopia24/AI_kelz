@@ -34,19 +34,19 @@ class CAPA(BaseModel):
     preventive_action:str
 
 class FirstTimeInvestigationRequest(BaseModel):
-    background_details:Dict[str, Any]
-    impact_assessment: Dict[str, Dict[str, Any]]
+    existing_background_details:Dict[str, Any]
+    existing_impact_assessment: Dict[str, Dict[str, Any]]
     document_information: List[Dict[str, Any]]
 
 class InvestigationRequest(BaseModel):
     transcript: str
-    background:Optional[str]=None
-    discussion: Optional[Discussion]=None
-    root_cause_analysis:Optional[RootCauseAnalysis]=None
-    final_assessment:Optional[FinalAssessment]=None
-    historic_review:Optional[str]=None
-    capa:Optional[CAPA]=None
-    attendees:Optional[List[str]]=None
+    existing_background:Optional[str]=None
+    existing_discussion: Optional[Discussion]=None
+    existing_root_cause_analysis:Optional[RootCauseAnalysis]=None
+    existing_final_assessment:Optional[FinalAssessment]=None
+    existing_historic_review:Optional[str]=None
+    existing_capa:Optional[CAPA]=None
+    existing_attendees:Optional[List[str]]=None
 
 class InvestigationResponse(BaseModel):
     background:str
@@ -69,12 +69,12 @@ class FinalInvestigationReportResponse(BaseModel):
 
 class RepeateInvestigationRequest(BaseModel):
     transcription: str
-    background: str
-    immediate_actions: str 
-    discussion: str
-    root_cause_analysis: List[Dict[str, Any]]
-    fishbone_diagram: List[Dict[str, Any]]
-    historic_review: str
-    capa: str
-    impact_assessment: str
-    conclusion:str
+    existing_background: str
+    existing_immediate_actions: str 
+    existing_discussion: str
+    existing_root_cause_analysis: List[Dict[str, Any]]
+    existing_fishbone_diagram: List[Dict[str, Any]]
+    existing_historic_review: str
+    existing_capa: str
+    existing_impact_assessment: str
+    existing_conclusion:str
