@@ -27,11 +27,11 @@ class BackgroundDetails(BaseModel):
 
 class PerMinuteInitiationRequest(BaseModel):
     transcribed_text: str
-    incident_title: Optional[str] = None
-    background_details: Optional[Dict[str, Any]] = None
-    background_attendee: Optional[List[str]] = None
-    impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
-    criticality: Optional[str] = None
+    existing_incident_title: Optional[str] = None
+    existing_background_details: Optional[Dict[str, Any]] = None
+    existing_background_attendee: Optional[List[str]] = None
+    existing_impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
+    existing_criticality: Optional[str] = None
 
 
 class PerMinuteInitiationResponse(BaseModel):
@@ -42,14 +42,14 @@ class PerMinuteInitiationResponse(BaseModel):
     criticality: str
 
 class FinalCheckRequest(BaseModel):
-    background_details: Dict[str, Any]
+    existing_background_details: Dict[str, Any]
 
 class FinalRequest(BaseModel):
     transcribed_text: str
-    incident_title: Optional[str] = None
-    background_details: Optional[Dict[str, Any]] = None
-    background_attendee: Optional[List[str]] = None
-    impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
+    existing_incident_title: Optional[str] = None
+    existing_background_details: Optional[Dict[str, Any]] = None
+    existing_background_attendee: Optional[List[str]] = None
+    existing_impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
 
 class IncidentReportSection(BaseModel):
     content: str
@@ -62,5 +62,5 @@ class FormalIncidentReport(BaseModel):
     criticality: IncidentReportSection
 
 class ModifyIncidentReportRequest(BaseModel):
-    report: FormalIncidentReport
+    existing_report: FormalIncidentReport
     modifications: str
