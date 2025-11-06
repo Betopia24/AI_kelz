@@ -31,6 +31,7 @@ class PerMinuteInitiationRequest(BaseModel):
     background_details: Optional[Dict[str, Any]] = None
     background_attendee: Optional[List[str]] = None
     impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
+    criticality: Optional[str] = None
 
 
 class PerMinuteInitiationResponse(BaseModel):
@@ -38,6 +39,7 @@ class PerMinuteInitiationResponse(BaseModel):
     background_details: BackgroundDetails
     background_attendee: List[str]  
     impact_assessment: ImpactAssessment
+    criticality: str
 
 class FinalCheckRequest(BaseModel):
     background_details: Dict[str, Any]

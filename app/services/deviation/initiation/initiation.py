@@ -39,6 +39,7 @@ class Initiation:
                 - {input_data.background_details}: (Optional) Previously extracted background details, if any.
                 - {input_data.background_attendee}: (Optional) List of previously known attendee names.
                 - {input_data.impact_assessment}: (Optional) Previously extracted impact assessment data, if any.
+                - {input_data.criticality}: (Optional) Previously extracted criticality, if any.
 
                 ---
 
@@ -78,6 +79,8 @@ class Initiation:
                 ✅ Examples:
                 - "Product_Quality": {{ "impact": "Yes", "severity": "Medium" }}
                 - "Patient_Safety": {{ "impact": "No", "severity": "" }}
+
+                5. "criticality" (string): The criticality level of the incident "Major" or "Minor". If you can't determine the criticality or not mentioned explicitly, return an empty string.
 
                 ---
 
@@ -141,7 +144,8 @@ class Initiation:
                     "impact": "Yes",
                     "severity": "Low"
                     }}
-                }}
+                }},
+                "criticality": "Major"
                 }}
                 """
 
