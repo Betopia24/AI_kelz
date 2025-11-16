@@ -12,7 +12,7 @@ class per_minute_qta_revision_response(BaseModel):
     action_summary:str
 class final_qta_revision_request(BaseModel):
     transcribed_text:str
-    user_document:Union[List[Dict[str,Any]],str]
+    documents:Union[List[Dict[str,Any]],str]
 
 class final_qta_revision_response(BaseModel):
     action_summary:str
