@@ -78,47 +78,67 @@ class QTARevision:
     
     def get_final_summary(self, input_data:final_qta_revision_request) -> final_qta_revision_response:
         """Process review request with optional document text"""
-        prompt = self.create_prompt(input_data)
+        try:
+            system_prompt = self.create_system_prompt()
+            user_prompt = self.create_user_prompt(input_data)
+            response = self.get_openai_response(user_prompt, system_prompt)
+            print(f"OpenAI Response: {response}")
+            
+            if not response or response.strip() == "":
+                raise ValueError("Empty response from OpenAI")
+            
+            response_dict = json.loads(response)
+            return final_qta_revision_response(**response_dict)
         
-        
-        response = self.get_openai_response(prompt)
-        print(response)
-        response_dict = json.loads(response)
-        return final_qta_revision_response(**response_dict)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=500, detail=f"Failed to parse OpenAI response as JSON: {str(e)}")
+        except ValidationError as e:
+            raise HTTPException(status_code=500, detail=f"Response validation failed: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error in get_final_summary: {str(e)}")
 
-    def create_prompt(self ,input_data: final_qta_revision_request) -> str:
-        return f"""
-                You are an AI assistant responsible for revising a client document based on user-provided instructions and a modified version of the document.
+    def create_system_prompt(self) -> str:
+        return """You are an AI assistant specialized in QTA (Quality Technical Agreement) document revision.
 
-                Your task involves the following steps:
-                1. Analyze the **transcribed_text** to understand what changes the user is requesting.
-                2. Compare the **client_document** with the **user_document** to identify modifications, additions, or deletions.
-                3. Apply the necessary changes to the client_document to create a new version that reflects the user's input.
+Your role and capabilities:
+- Expert in quality management documents including SOPs, CAPA, SME reviews, Contracts and compliance requirements
+- Skilled in document structure analysis and professional formatting
+- Focused on maintaining regulatory compliance and quality standards
 
-                After updating the document, return:
-                - **action_summary**: A brief summary of the changes you made (as a string).
-                - **change_details**: A detailed breakdown of changes as a single string with markdown formatting. Use bullet points or numbered lists to organize categories like CAPA, SME Inputs, Gap Assessment, etc.
-                - **document_text**: The final revised version of the client document (as a string).
+Your task process:
+1. Analyze user instructions to understand exactly what changes are requested
+2. Examine all provided documents to understand their content and relationships
+3. Apply requested changes to create revised versions of documents
+4. Ensure all revisions maintain professional structure and formatting
+5. Focus on quality-related aspects like SOPs, CAPA, SME inputs, and compliance requirements
 
-                ### User Instructions:
-                {input_data.transcribed_text}
+Response requirements:
+- Return ONLY valid JSON with exactly three keys: "action_summary", "change_details", "document_text"
+- "action_summary": Brief summary of changes made to which documents
+- "change_details": Detailed breakdown using markdown formatting with categories like Document Structure Changes, Content Additions/Modifications, Safety and Compliance Updates, Process Improvements
+- "document_text": Complete final revised document content (never abbreviated)
+- "change_details" must be a single string with \\n for line breaks, not an object or array
+- Maintain document formatting and structure in the final output
+- If multiple documents are revised, combine them appropriately in document_text
 
-                ### Original Client Document:
-                {input_data.client_document}
+Critical formatting rules:
+- Document filenames are dynamic - analyze content to understand what each document contains  
+- Include complete revised document text, never use placeholders like "[...]" or "Content continues..."
+- Preserve original document structure, numbering, and professional formatting"""
+                
+                
 
-                ### Updated User Document (Reference for Changes):
-                {input_data.user_document}
+    def create_user_prompt(self, input_data: final_qta_revision_request) -> str:
+        return f"""Please revise the following documents according to the user instructions.
 
-                **IMPORTANT**: Return ONLY a JSON object with exactly these three keys: "action_summary", "change_details", and "document_text". 
-                The "change_details" field must be a single string (not an object or array). Use markdown formatting within the string for structure.
+                    User Instructions:
+                    {input_data.transcribed_text}
 
-                Example format:
-                {{
-                  "action_summary": "Updated contract terms and modified payment schedule...",
-                  "change_details": "- **Parties and Formatting**: XYZ Solutions Inc. is now listed as the first party\\n- **Scope of Work**: Service description updated to digital strategy\\n- **Payment Terms**: Fee changed from $15,000 to $5,000 per month",
-                  "document_text": "This Agreement is entered into..."
-                }}
-                """
+                    Available Documents:
+                    {input_data.documents}
+
+                    Provide your response as a JSON object with the three required keys."""
+                
                 
     def repeat_final_summary(
     self,
@@ -170,13 +190,32 @@ class QTARevision:
         except ValidationError as e:
             raise ValueError(f"Response validation failed: {e}")
     
-    def get_openai_response (self, prompt:str)->str:
-        completion =self.client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7            
-        )
-        return completion.choices[0].message.content
+    def get_openai_response(self, prompt: str, system_prompt: str = None) -> str:
+        try:
+            print(f"Sending request to OpenAI with model: gpt-4")
+            
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+            
+            completion = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=messages,
+                temperature=0.7            
+            )
+            
+            response_content = completion.choices[0].message.content
+            print(f"Received response length: {len(response_content) if response_content else 0}")
+            
+            if not response_content:
+                raise ValueError("OpenAI returned empty response")
+                
+            return response_content
+            
+        except Exception as e:
+            print(f"Error in OpenAI API call: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
 
 
 
