@@ -172,7 +172,7 @@ class QTARevision:
     
     def get_openai_response (self, prompt:str)->str:
         completion =self.client.chat.completions.create(
-            model="gpt-4.1",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7            
         )
