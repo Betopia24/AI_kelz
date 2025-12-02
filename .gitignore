@@ -100,6 +100,7 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
+temp_auto_push.bat
 
 # Environments
 .env
@@ -150,7 +151,6 @@ tmp/
 .tmp/
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -202,4 +202,5 @@ ssl/
 
 # Backup files
 *.bak
-*.backup
+*.backup.gitignore
+branch_structure.json
