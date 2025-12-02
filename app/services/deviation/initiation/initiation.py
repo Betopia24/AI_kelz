@@ -260,6 +260,10 @@ class Initiation:
         - Background details: {json.dumps(input_data.existing_background_details) if input_data.existing_background_details else "Not provided"}
         - Meeting attendees: {json.dumps(input_data.existing_background_attendee) if input_data.existing_background_attendee else "Not provided"}
         - Impact assessment: {json.dumps(input_data.existing_impact_assessment) if input_data.existing_impact_assessment else "Not provided"}
+        - Supporting documents: {json.dumps(input_data.documents) if input_data.documents else "No supporting documents provided"}
+        
+        ## ADDITIONAL GUIDANCE:
+        If supporting documents are provided, they contain filename as keys and document content as values. Use this information to enhance the incident report with relevant details, evidence, or context that supports the deviation analysis.
 
         ## OUTPUT FORMAT:
         Generate a structured incident report with the following 5 main sections. Your response must be a JSON object with these exact sections:

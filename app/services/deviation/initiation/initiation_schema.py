@@ -50,6 +50,7 @@ class FinalRequest(BaseModel):
     existing_background_details: Optional[Dict[str, Any]] = None
     existing_background_attendee: Optional[List[str]] = None
     existing_impact_assessment: Optional[Dict[str, Dict[str, Any]]] = None
+    documents:Optional[Dict[str,Any]]=None
 
 class IncidentReportSection(BaseModel):
     content: str
